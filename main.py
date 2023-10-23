@@ -1,14 +1,15 @@
-import tkinter as ttk
 
-from PIL import Image, ImageTk
+from PIL import Image
 import customtkinter as ctk
 
 
 class Main(ctk.CTk):
-    def __init__(self, title, size):
-        super().__init__()
+    def __init__(self, title, size, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.title(title)
         self.geometry(f'{size[0]}x{size[1]}')
+        self.resizable(False, False)
+        self.toplevel_window = None
 
         # Notebook
         self.notebook = ctk.CTkTabview(
@@ -26,24 +27,32 @@ class Main(ctk.CTk):
         self.notebook.add(name='Пройти собеседование')
         self.notebook.set('Профиль пользователей')
 
-        self.userstats = UserStatistics(self.notebook.tab('Профиль пользователей'))
-        
+        self.userstats = UserStatistics(self.notebook.tab('Профиль пользователей'), self.create_new_user)
 
         self.mainloop()
 
+    def create_new_user(self):
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = CreateNewUser(self)
+        else:
+            self.toplevel_window.lift()
+            self.toplevel_window.focus()
+
+
+
 class UserStatistics(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, create_new_user):
         super().__init__(parent)
         self.width = 1000
         self.place(x=0, y=0)
         self.columnconfigure((0, 1), weight=1)
         self.rowconfigure((0, 1), weight=1)
+        self.create_new_user = create_new_user
 
         self.create_widgets()
 
-        
-    
     def create_widgets(self):
+        # PINK SCREEN
         self.choose_user_frame = ctk.CTkFrame(self, fg_color='#ffcccc', width=600, height=300)
         self.choose_user_frame.grid(row=0, column=0, sticky='n', padx=20, pady=20)
         self.label1 = ctk.CTkLabel(self.choose_user_frame, text='Управление пользователями', font=('Calibri', 25))
@@ -77,7 +86,8 @@ class UserStatistics(ctk.CTkFrame):
             hover_color='#92465f',
             text='Создать пользователя',
             image=self.button1_img,
-            text_color='black')
+            text_color='black',
+            command=self.create_new_user)
         self.button1.place(x=30, y=240)
 
         self.button2 = ctk.CTkButton(
@@ -91,12 +101,8 @@ class UserStatistics(ctk.CTkFrame):
             text_color='black')
         self.button2.place(x=320, y=80)
 
-        # # Image label
-        # self.label_image = Image.open('images/pinned.png').resize((140, 140))
-        # self.label_image_photo = ImageTk.PhotoImage(self.label_image)
-        # self.image_label = ctk.CTkLabel(self.choose_user_frame, text='', image=self.label_image_photo)
-        # self.image_label.place(x=390, y=140)
 
+        # YELLOW SCREEN
         self.global_stats_frame = ctk.CTkFrame(self, fg_color='#fff1c8', width=400, height=250)
         self.global_stats_frame.grid(row=1, column=0, sticky='e', padx=20, pady=20)
         self.label4 = ctk.CTkLabel(self.global_stats_frame, text='Глобальная статистика', font=('Calibri', 25))
@@ -110,6 +116,7 @@ class UserStatistics(ctk.CTkFrame):
         self.label8 = ctk.CTkLabel(self.global_stats_frame, text='Процент завершения', font=('Calibri', 18))
         self.label8.place(x=30, y=210)
 
+        # GREEN SCREEN
         self.particular_stats_frame = ctk.CTkFrame(self, fg_color='#d7e4d1', width=550)
         self.particular_stats_frame.grid(row=0, column=1, rowspan=2, sticky='nsew', padx=20, pady=20)
         self.label9 = ctk.CTkLabel(self.particular_stats_frame, text='Детальный прогресс по собеседованиям', font=('Calibri', 25))
@@ -178,6 +185,14 @@ class UserStatistics(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress7.place(x=30, y=510)
+
+class CreateNewUser(ctk.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("400x300")
+
+        self.label = ctk.CTkLabel(self, text="ToplevelWindow")
+        self.label.pack(padx=20, pady=20)
 
 if __name__ == '__main__':
     Main('Python Interview Assistant', (1280, 720))
