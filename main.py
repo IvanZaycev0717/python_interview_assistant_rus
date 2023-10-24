@@ -1,4 +1,5 @@
 
+
 from PIL import Image
 import customtkinter as ctk
 
@@ -27,20 +28,20 @@ class Main(ctk.CTk):
         self.notebook.add(name='Пройти собеседование')
         self.notebook.set('Профиль пользователей')
 
-        self.userstats = UserStatistics(self.notebook.tab('Профиль пользователей'), self.create_new_user)
-
-        self.mainloop()
+        self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user)
+        self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'))
 
     def create_new_user(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = CreateNewUser(self)
+            self.toplevel_window.focus()
         else:
             self.toplevel_window.lift()
             self.toplevel_window.focus()
 
 
 
-class UserStatistics(ctk.CTkFrame):
+class UserStatisticsTab(ctk.CTkFrame):
     def __init__(self, parent, create_new_user):
         super().__init__(parent)
         self.width = 1000
@@ -189,10 +190,34 @@ class UserStatistics(ctk.CTkFrame):
 class CreateNewUser(ctk.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("400x300")
+        self.title('Python Interview Assistant - Добавить пользователя')
+        self.geometry('390x160')
+        self.resizable(False, False)
 
-        self.label = ctk.CTkLabel(self, text="ToplevelWindow")
-        self.label.pack(padx=20, pady=20)
+
+        self.frame = ctk.CTkFrame(self, width=350, height=110, fg_color='#d3e4ef')
+        self.frame.pack(side='top', expand=True, fill='both', padx=10, pady=10)
+        self.frame.rowconfigure((0, 1, 2, 3), weight=1)
+        self.frame.columnconfigure((0, 1), weight=1)
+
+        self.label = ctk.CTkLabel(self.frame, text='Создайте имя пользователя:')
+        self.label.grid(row=0, column=0, sticky='ws', padx=10)
+        self.enter = ctk.CTkEntry(self.frame, width=350)
+        self.enter.grid(row=1, column=0, sticky='wn', padx=10, columnspan=2)
+        self.helper = ctk.CTkLabel(self.frame, text='')
+        self.helper.grid(row=2, column=0, sticky='wn', padx=10)
+        self.save_button = ctk.CTkButton(self.frame, text='Создать')
+        self.save_button.grid(row=3, column=0, sticky='wn', padx=10)
+        self.cancel_button = ctk.CTkButton(self.frame, text='Отмена', command=self.cancel_button)
+        self.cancel_button.grid(row=3, column=1, sticky='en', padx=10)
+    
+    def cancel_button(self):
+        self.destroy()
+
+class InterviewSettingsTab(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
 
 if __name__ == '__main__':
-    Main('Python Interview Assistant', (1280, 720))
+    main_window = Main('Python Interview Assistant', (1280, 720))
+    main_window.mainloop()
