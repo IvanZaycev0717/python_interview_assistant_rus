@@ -3,6 +3,8 @@
 from PIL import Image
 import customtkinter as ctk
 
+from settings import *
+
 
 class Main(ctk.CTk):
     def __init__(self, title, size, *args, **kwargs):
@@ -123,7 +125,7 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.label9 = ctk.CTkLabel(self.particular_stats_frame, text='Детальный прогресс по собеседованиям', font=('Calibri', 25))
         self.label9.place(x=30, y=10)
 
-        self.label10 = ctk.CTkLabel(self.particular_stats_frame, text='Базовый синтаксис Python', font=('Calibri', 18))
+        self.label10 = ctk.CTkLabel(self.particular_stats_frame, text=BASICS, font=('Calibri', 18))
         self.label10.place(x=30, y=60)
         self.progress1 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -132,7 +134,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress1.place(x=30, y=90)
-        self.label11 = ctk.CTkLabel(self.particular_stats_frame, text='Объекто-ориентированное программирование (ООП)', font=('Calibri', 18))
+        self.label11 = ctk.CTkLabel(self.particular_stats_frame, text=OOP, font=('Calibri', 18))
         self.label11.place(x=30, y=130)
         self.progress2 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -150,7 +152,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress3.place(x=30, y=230)
-        self.label13 = ctk.CTkLabel(self.particular_stats_frame, text='Структуры данных на Python', font=('Calibri', 18))
+        self.label13 = ctk.CTkLabel(self.particular_stats_frame, text=STRUCTURES, font=('Calibri', 18))
         self.label13.place(x=30, y=270)
         self.progress4 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -159,7 +161,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress4.place(x=30, y=300)
-        self.label14 = ctk.CTkLabel(self.particular_stats_frame, text='Алгоритмы на Python', font=('Calibri', 18))
+        self.label14 = ctk.CTkLabel(self.particular_stats_frame, text=ALGHORITMS, font=('Calibri', 18))
         self.label14.place(x=30, y=340)
         self.progress5 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -168,7 +170,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress5.place(x=30, y=370)
-        self.label15 = ctk.CTkLabel(self.particular_stats_frame, text='Git', font=('Calibri', 18))
+        self.label15 = ctk.CTkLabel(self.particular_stats_frame, text=GIT, font=('Calibri', 18))
         self.label15.place(x=30, y=410)
         self.progress6 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -177,7 +179,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress6.place(x=30, y=440)
-        self.label16 = ctk.CTkLabel(self.particular_stats_frame, text='Базы данных и SQL запросы', font=('Calibri', 18))
+        self.label16 = ctk.CTkLabel(self.particular_stats_frame, text=SQL, font=('Calibri', 18))
         self.label16.place(x=30, y=480)
         self.progress7 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -217,6 +219,95 @@ class CreateNewUser(ctk.CTkToplevel):
 class InterviewSettingsTab(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
+        self.width = 1200
+        self.place(x=0, y=0)
+        self.columnconfigure((0, ), weight=1)
+        self.rowconfigure((0, 1, 2, 3), weight=1)
+
+        
+
+        self.choose_interview_mode_tab()
+        self.choose_random_interview()
+        self.choose_free_mode()
+        self.toggle_sounds()
+
+        
+    
+    def draw_line(self, frame):
+        self.tab_line = ctk.CTkCanvas(frame, width=5, height = 80, bd=0, highlightthickness=0)
+        self.tab_line.place(x=400, y=10)
+        self.tab_line.create_line(0, 0, 0, 80, width=10)
+    
+    def draw_label(self, frame, text):
+        ctk.CTkLabel(frame, text=text, font=('Calibri', 20)).place(x=20, y=35)
+    
+    def choose_interview_mode_tab(self):
+        self.choose_interview_mode_frame = ctk.CTkFrame(self, fg_color='#f7f7f7', width=1185, height=100)
+        self.choose_interview_mode_frame.grid(row=0, column=0, sticky='n', padx=20, pady=20)
+        self.draw_label(self.choose_interview_mode_frame, 'Выбор тем собеседования')
+        self.draw_line(self.choose_interview_mode_frame)
+        self.basics = ctk.CTkCheckBox(
+            master=self.choose_interview_mode_frame,
+            text=BASICS,
+            hover_color='#68a248',
+            fg_color='#68a248')
+        self.basics.place(x=420, y=15)
+        self.oop = ctk.CTkCheckBox(
+            master=self.choose_interview_mode_frame,
+            text='ООП Python',
+            hover_color='#68a248',
+            fg_color='#68a248')
+        self.oop.place(x=420, y=55)
+        self.pep = ctk.CTkCheckBox(
+            master=self.choose_interview_mode_frame,
+            text='PEP8, PEP257',
+            hover_color='#68a248',
+            fg_color='#68a248')
+        self.pep.place(x=650, y=15)
+        self.structures = ctk.CTkCheckBox(
+            master=self.choose_interview_mode_frame,
+            text=STRUCTURES,
+            hover_color='#68a248',
+            fg_color='#68a248')
+        self.structures.place(x=650, y=55)
+        self.alghoritms = ctk.CTkCheckBox(
+            master=self.choose_interview_mode_frame,
+            text=ALGHORITMS,
+            hover_color='#68a248',
+            fg_color='#68a248')
+        self.alghoritms.place(x=870, y=15)
+        self.sql = ctk.CTkCheckBox(
+            master=self.choose_interview_mode_frame,
+            text=SQL,
+            hover_color='#68a248',
+            fg_color='#68a248')
+        self.sql.place(x=870, y=55)
+        self.git = ctk.CTkCheckBox(
+            master=self.choose_interview_mode_frame,
+            text=GIT,
+            hover_color='#68a248',
+            fg_color='#68a248')
+        self.git.place(x=1100, y=15)
+
+        
+
+    def choose_random_interview(self):
+        self.choose_random_interview_frame = ctk.CTkFrame(self, fg_color='#f1f1f1', width=1185, height=100)
+        self.choose_random_interview_frame.grid(row=1, column=0, sticky='n', padx=20, pady=20)
+        self.draw_label(self.choose_random_interview_frame, 'Последовательность вопросов')
+        self.draw_line(self.choose_random_interview_frame)
+    
+    def choose_free_mode(self):
+        self.choose_free_mode_frame = ctk.CTkFrame(self, fg_color='#ebebeb', width=1185, height=100)
+        self.choose_free_mode_frame.grid(row=2, column=0, sticky='n', padx=20, pady=20)
+        self.draw_label(self.choose_free_mode_frame, 'Свободное перемещение по вопросам')
+        self.draw_line(self.choose_free_mode_frame)
+
+    def toggle_sounds(self):
+        self.toggle_sounds_frame = ctk.CTkFrame(self, fg_color='#e5e5e5', width=1185, height=100)
+        self.toggle_sounds_frame.grid(row=3, column=0, sticky='n', padx=20, pady=20)
+        self.draw_label(self.toggle_sounds_frame, 'Управление громкостью собеседования')
+        self.draw_line(self.toggle_sounds_frame)
 
 if __name__ == '__main__':
     main_window = Main('Python Interview Assistant', (1280, 720))
