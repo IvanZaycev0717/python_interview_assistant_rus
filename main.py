@@ -1,5 +1,6 @@
 
 
+import tkinter
 from PIL import Image
 import customtkinter as ctk
 
@@ -224,6 +225,11 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.columnconfigure((0, ), weight=1)
         self.rowconfigure((0, 1, 2, 3), weight=1)
 
+        self.random_var = ctk.IntVar()
+        self.freemode_var = ctk.IntVar()
+        self.sound_volume = ctk.IntVar(value=30)
+        self.sound_text = ctk.StringVar(value=f'Громкость: {self.sound_volume.get()}%')
+
         
 
         self.choose_interview_mode_tab()
@@ -234,7 +240,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
         
     
     def draw_line(self, frame):
-        self.tab_line = ctk.CTkCanvas(frame, width=5, height = 80, bd=0, highlightthickness=0)
+        self.tab_line = ctk.CTkCanvas(frame, width=5, height=80, bd=0, highlightthickness=0)
         self.tab_line.place(x=400, y=10)
         self.tab_line.create_line(0, 0, 0, 80, width=10)
     
@@ -242,7 +248,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
         ctk.CTkLabel(frame, text=text, font=('Calibri', 20)).place(x=20, y=35)
     
     def choose_interview_mode_tab(self):
-        self.choose_interview_mode_frame = ctk.CTkFrame(self, fg_color='#f7f7f7', width=1185, height=100)
+        self.choose_interview_mode_frame = ctk.CTkFrame(self, fg_color='#e2f7b5', width=1185, height=100)
         self.choose_interview_mode_frame.grid(row=0, column=0, sticky='n', padx=20, pady=20)
         self.draw_label(self.choose_interview_mode_frame, 'Выбор тем собеседования')
         self.draw_line(self.choose_interview_mode_frame)
@@ -292,22 +298,72 @@ class InterviewSettingsTab(ctk.CTkFrame):
         
 
     def choose_random_interview(self):
-        self.choose_random_interview_frame = ctk.CTkFrame(self, fg_color='#f1f1f1', width=1185, height=100)
+        self.choose_random_interview_frame = ctk.CTkFrame(self, fg_color='#e2f7b5', width=1185, height=100)
         self.choose_random_interview_frame.grid(row=1, column=0, sticky='n', padx=20, pady=20)
         self.draw_label(self.choose_random_interview_frame, 'Последовательность вопросов')
         self.draw_line(self.choose_random_interview_frame)
+        self.random_button_off = ctk.CTkRadioButton(
+            self.choose_random_interview_frame,
+            value=0,
+            text='Вопросы задают последовательно',
+            variable=self.random_var,
+            fg_color='#68a248',
+            hover_color='#68a248')
+        self.random_button_off.place(x=420, y=40)
+        self.random_button_on = ctk.CTkRadioButton(
+            self.choose_random_interview_frame,
+            value=1,
+            text='Вопросы задают случайно',
+            variable=self.random_var,
+            fg_color='#68a248',
+            hover_color='#68a248')
+        self.random_button_on.place(x=700, y=40)
     
     def choose_free_mode(self):
-        self.choose_free_mode_frame = ctk.CTkFrame(self, fg_color='#ebebeb', width=1185, height=100)
+        self.choose_free_mode_frame = ctk.CTkFrame(self, fg_color='#e2f7b5', width=1185, height=100)
         self.choose_free_mode_frame.grid(row=2, column=0, sticky='n', padx=20, pady=20)
         self.draw_label(self.choose_free_mode_frame, 'Свободное перемещение по вопросам')
         self.draw_line(self.choose_free_mode_frame)
+        self.freemode_button_on = ctk.CTkRadioButton(
+            self.choose_free_mode_frame,
+            value=1,
+            text='Включить свободный выбор вопросов',
+            variable=self.freemode_var,
+            fg_color='#68a248',
+            hover_color='#68a248')
+        self.freemode_button_on.place(x=420, y=40)
+        self.freemode_button_off = ctk.CTkRadioButton(
+            self.choose_free_mode_frame,
+            value=0,
+            text='Отключить свободный выбор вопросов',
+            variable=self.freemode_var,
+            fg_color='#68a248',
+            hover_color='#68a248')
+        self.freemode_button_off.place(x=700, y=40)
 
     def toggle_sounds(self):
-        self.toggle_sounds_frame = ctk.CTkFrame(self, fg_color='#e5e5e5', width=1185, height=100)
+        self.toggle_sounds_frame = ctk.CTkFrame(self, fg_color='#e2f7b5', width=1185, height=100)
         self.toggle_sounds_frame.grid(row=3, column=0, sticky='n', padx=20, pady=20)
         self.draw_label(self.toggle_sounds_frame, 'Управление громкостью собеседования')
         self.draw_line(self.toggle_sounds_frame)
+
+        self.sound_scale = ctk.CTkSlider(
+            self.toggle_sounds_frame,
+            orientation='horizontal',
+            from_=0,
+            to=100,
+            variable=self.sound_volume,
+            width=280,
+            command=lambda value: self.sound_text.set(f'Громкость: {self.sound_volume.get()}%'),
+            button_color='#68a248',
+            button_hover_color='#68a248',
+            progress_color='#68a248')
+        self.sound_scale.place(x=420, y=40)
+        self.sound_label = ctk.CTkLabel(self.toggle_sounds_frame, textvariable=self.sound_text)
+        self.sound_label.place(x=710, y=32)
+
+
+    
 
 if __name__ == '__main__':
     main_window = Main('Python Interview Assistant', (1280, 720))
