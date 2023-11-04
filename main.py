@@ -1,5 +1,4 @@
 
-
 import tkinter
 from PIL import Image
 import customtkinter as ctk
@@ -33,6 +32,7 @@ class Main(ctk.CTk):
 
         self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user)
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'))
+        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'))
 
     def create_new_user(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
@@ -362,6 +362,112 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.sound_label = ctk.CTkLabel(self.toggle_sounds_frame, textvariable=self.sound_text)
         self.sound_label.place(x=710, y=32)
 
+class InterviewPassTab(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.width = 1200
+        self.place(x=0, y=0)
+        self.columnconfigure((0, 1), weight=1)
+        self.rowconfigure((0, 1), weight=1)
+
+        self.create_interview_frame()
+        self.create_control_frame()
+    
+    def create_interview_frame(self):
+        self.interview_frame = ctk.CTkFrame(self, fg_color='#ffd38f', width=620, height=400)
+        self.interview_frame.grid(row=0, column=0, padx=30, pady=10)
+
+        # first row
+        self.begin_button = ctk.CTkButton(
+            master=self.interview_frame,
+            width=300,
+            height=40,
+            text='Начать собеседование',
+            fg_color='#333f65',
+            hover_color='#232e52')
+        self.begin_button.place(x=20, y=20)
+
+        self.replay_button = ctk.CTkButton(
+            master=self.interview_frame,
+            width=150,
+            height=40,
+            text='Проиграть вопрос',
+            fg_color='#333f65',
+            hover_color='#232e52')
+        self.replay_button.place(x=400, y=20)
+
+        self.mute_button = ctk.CTkButton(
+            master=self.interview_frame,
+            width=40,
+            height=40,
+            text='',
+            fg_color='#333f65',
+            hover_color='#232e52')
+        self.mute_button.place(x=560, y=20)
+
+        ctk.CTkLabel(
+            master=self.interview_frame,
+            text='Теоретический вопрос',
+            font=('Calibri', 25)).place(x=20, y=75)
+        
+        self.theory_textbox = ctk.CTkTextbox(
+            master=self.interview_frame,
+            width=580,
+            height=100
+        )
+        self.theory_textbox.place(x=20, y=120)
+        
+        ctk.CTkLabel(
+            master=self.interview_frame,
+            text='Live coding',
+            font=('Calibri', 25)).place(x=20, y=240)
+        
+        self.coding_button = ctk.CTkButton(
+            master=self.interview_frame,
+            width=150,
+            height=28,
+            text='Проиграть вопрос Live coding',
+            fg_color='#333f65',
+            hover_color='#232e52')
+        self.coding_button.place(x=160, y=242)
+
+        self.coding_textbox = ctk.CTkTextbox(
+            master=self.interview_frame,
+            width=580,
+            height=100
+        )
+        self.coding_textbox.place(x=20, y=280)
+    
+    def create_control_frame(self):
+        self.control_frame = ctk.CTkFrame(self, fg_color='#e6a765', width=620, height=200)
+        self.control_frame.grid(row=1, column=0)
+
+        self.positive_button = ctk.CTkButton(
+            master=self.control_frame,
+            width=260,
+            height=70,
+            text='Я правильно ответил на вопрос',
+            fg_color='#578555',
+            hover_color='#2d642a'
+        ).place(x=20, y=20)
+
+        self.negative_button = ctk.CTkButton(
+            master=self.control_frame,
+            width=260,
+            height=70,
+            text='Я не знаю, следующий вопрос',
+            fg_color='#ac1416',
+            hover_color='#ce6163'
+        ).place(x=340, y=20)
+
+        self.answer_button = ctk.CTkButton(
+            master=self.control_frame,
+            width=580,
+            height=70,
+            text='Подсказка',
+            fg_color='#c1461e',
+            hover_color='#ff662a'
+        ).place(x=20, y=110)
 
     
 
