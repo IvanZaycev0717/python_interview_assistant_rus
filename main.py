@@ -1,5 +1,6 @@
 
-import tkinter
+import tkinter as tk
+from tkinter import ttk
 from PIL import Image
 import customtkinter as ctk
 
@@ -372,6 +373,7 @@ class InterviewPassTab(ctk.CTkFrame):
 
         self.create_interview_frame()
         self.create_control_frame()
+        self.create_treeview_frame()
     
     def create_interview_frame(self):
         self.interview_frame = ctk.CTkFrame(self, fg_color='#ffd38f', width=620, height=400)
@@ -439,7 +441,7 @@ class InterviewPassTab(ctk.CTkFrame):
         self.coding_textbox.place(x=20, y=280)
     
     def create_control_frame(self):
-        self.control_frame = ctk.CTkFrame(self, fg_color='#e6a765', width=620, height=200)
+        self.control_frame = ctk.CTkFrame(self, fg_color='#ffd38f', width=620, height=200)
         self.control_frame.grid(row=1, column=0)
 
         self.positive_button = ctk.CTkButton(
@@ -469,6 +471,41 @@ class InterviewPassTab(ctk.CTkFrame):
             hover_color='#ff662a'
         ).place(x=20, y=110)
 
+    def create_treeview_frame(self):
+        self.control_frame = ctk.CTkFrame(self, fg_color='#ffd38f', width=530, height=615)
+        self.control_frame.grid(row=0, column=1, rowspan=2, pady=10)
+
+        self.question_tree = ttk.Treeview(
+            master=self.control_frame,
+        )
+        
+        self.question_tree.heading('#0', text='Темы и вопросы собеседования', anchor=tk.W)
+
+
+        # adding data
+        self.question_tree.insert('', tk.END, text=BASICS, iid=0, open=True)
+        self.question_tree.insert('', tk.END, text=OOP, iid=1, open=True)
+        self.question_tree.insert('', tk.END, text=PEP8, iid=2, open=True)
+        self.question_tree.insert('', tk.END, text=STRUCTURES, iid=3, open=True)
+        self.question_tree.insert('', tk.END, text=ALGHORITMS, iid=4, open=True)
+        self.question_tree.insert('', tk.END, text=GIT, iid=5, open=True)
+        self.question_tree.insert('', tk.END, text=SQL, iid=7, open=True)
+
+        # adding children of first node
+        self.question_tree.insert('', tk.END, text='Q1. Динамическая типизация', iid=8, open=False)
+        self.question_tree.insert('', tk.END, text='Q2. Неявная типизация', iid=9, open=False)
+        self.question_tree.insert('', tk.END, text='Q3. Сильная типизация', iid=10, open=False)
+        self.question_tree.insert('', tk.END, text='Q15. Понятие класса', iid=11, open=False)
+        self.question_tree.insert('', tk.END, text='Q30. Допустимая длина строки', iid=12, open=False)
+        self.question_tree.move(8, 0, 0)
+        self.question_tree.move(9, 0, 1)
+        self.question_tree.move(10, 0, 2)
+        self.question_tree.move(11, 1, 0)
+        self.question_tree.move(12, 2, 0)
+
+
+
+        self.question_tree.place(x=20, y=20, width=490, height=580)
     
 
 if __name__ == '__main__':
