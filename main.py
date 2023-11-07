@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image
 import customtkinter as ctk
+import markdown2 as md
+from tkhtmlview import HTMLLabel, RenderHTML
 
 from settings import *
 
@@ -13,7 +15,8 @@ class Main(ctk.CTk):
         self.title(title)
         self.geometry(f'{size[0]}x{size[1]}')
         self.resizable(False, False)
-        self.toplevel_window = None
+        self.create_user_window = None
+        self.hint_window = None
 
         # Notebook
         self.notebook = ctk.CTkTabview(
@@ -33,15 +36,34 @@ class Main(ctk.CTk):
 
         self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user)
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'))
-        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'))
+        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.call_hint_window)
+
+
 
     def create_new_user(self):
-        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-            self.toplevel_window = CreateNewUser(self)
-            self.toplevel_window.focus()
+        if self.create_user_window is None or not self.create_user_window.winfo_exists():
+            self.create_user_window = CreateNewUser('Python Interview Assistant - Добавить пользователя')
+            self.focus()
+            self.create_user_window.focus()
         else:
-            self.toplevel_window.lift()
-            self.toplevel_window.focus()
+            self.create_user_window.lift()
+            self.create_user_window.focus()
+    
+    def call_hint_window(self):
+        if self.hint_window is None or not self.hint_window.winfo_exists():
+            self.hint_window = HintWindow()
+            self.hint_window.focus()
+        else:
+            self.hint_window.lift()
+            self.hint_window.focus()
+
+
+    def md_to_html(self, md_file):
+        with open(md_file, 'r', encoding='utf-8') as file:
+            md_content = file.read()
+            html_content = md.markdown(md_content)
+            return str(html_content)
+
 
 
 
@@ -191,32 +213,6 @@ class UserStatisticsTab(ctk.CTkFrame):
             progress_color='#55e400')
         self.progress7.place(x=30, y=510)
 
-class CreateNewUser(ctk.CTkToplevel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.title('Python Interview Assistant - Добавить пользователя')
-        self.geometry('390x160')
-        self.resizable(False, False)
-
-
-        self.frame = ctk.CTkFrame(self, width=350, height=110, fg_color='#d3e4ef')
-        self.frame.pack(side='top', expand=True, fill='both', padx=10, pady=10)
-        self.frame.rowconfigure((0, 1, 2, 3), weight=1)
-        self.frame.columnconfigure((0, 1), weight=1)
-
-        self.label = ctk.CTkLabel(self.frame, text='Создайте имя пользователя:')
-        self.label.grid(row=0, column=0, sticky='ws', padx=10)
-        self.enter = ctk.CTkEntry(self.frame, width=350)
-        self.enter.grid(row=1, column=0, sticky='wn', padx=10, columnspan=2)
-        self.helper = ctk.CTkLabel(self.frame, text='')
-        self.helper.grid(row=2, column=0, sticky='wn', padx=10)
-        self.save_button = ctk.CTkButton(self.frame, text='Создать')
-        self.save_button.grid(row=3, column=0, sticky='wn', padx=10)
-        self.cancel_button = ctk.CTkButton(self.frame, text='Отмена', command=self.cancel_button)
-        self.cancel_button.grid(row=3, column=1, sticky='en', padx=10)
-    
-    def cancel_button(self):
-        self.destroy()
 
 class InterviewSettingsTab(ctk.CTkFrame):
     def __init__(self, parent):
@@ -364,16 +360,25 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.sound_label.place(x=710, y=32)
 
 class InterviewPassTab(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, call_hint_window):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
         self.columnconfigure((0, 1), weight=1)
         self.rowconfigure((0, 1), weight=1)
+        self.call_hint_window = call_hint_window
+
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(label="Копировать", command=lambda: self.focus_get().event_generate("<<Copy>>"))
 
         self.create_interview_frame()
         self.create_control_frame()
         self.create_treeview_frame()
+
+        # Events
+        self.context_menu_event_loop(self.theory_textbox)
+        self.context_menu_event_loop(self.coding_textbox)
+
     
     def create_interview_frame(self):
         self.interview_frame = ctk.CTkFrame(self, fg_color='#ffd38f', width=620, height=400)
@@ -468,7 +473,8 @@ class InterviewPassTab(ctk.CTkFrame):
             height=70,
             text='Подсказка',
             fg_color='#c1461e',
-            hover_color='#ff662a'
+            hover_color='#ff662a',
+            command=self.call_hint_window
         ).place(x=20, y=110)
 
     def create_treeview_frame(self):
@@ -503,10 +509,61 @@ class InterviewPassTab(ctk.CTkFrame):
         self.question_tree.move(11, 1, 0)
         self.question_tree.move(12, 2, 0)
 
-
-
         self.question_tree.place(x=20, y=20, width=490, height=580)
+
     
+    def context_menu_event_loop(self, text_box):
+        text_box.bind("<Button-3>", lambda event: self.context_menu.post(event.x_root, event.y_root))
+        text_box.bind("<Control-c>", lambda event: self.copy_text)
+    
+    def copy_text(event):
+        widget = event.widget
+        selected_text = widget.clipboard_get()
+        if widget.tag_ranges("sel"):
+            selected_text = widget.get("sel.first", "sel.last")
+        widget.clipboard_clear()
+        widget.clipboard_append(selected_text)
+    
+
+class CreateNewUser(ctk.CTkToplevel):
+    def __init__(self, title):
+        super().__init__()
+        self.title(title)
+        self.geometry('390x160')
+        self.resizable(False, False)
+
+
+        self.frame = ctk.CTkFrame(self, width=350, height=110, fg_color='#d3e4ef')
+        self.frame.pack(side='top', expand=True, fill='both', padx=10, pady=10)
+        self.frame.rowconfigure((0, 1, 2, 3), weight=1)
+        self.frame.columnconfigure((0, 1), weight=1)
+
+
+        self.label = ctk.CTkLabel(self.frame, text='Создайте имя пользователя:')
+        self.label.grid(row=0, column=0, sticky='ws', padx=10)
+        self.enter = ctk.CTkEntry(self.frame, width=350)
+        self.enter.grid(row=1, column=0, sticky='wn', padx=10, columnspan=2)
+        self.helper = ctk.CTkLabel(self.frame, text='')
+        self.helper.grid(row=2, column=0, sticky='wn', padx=10)
+        self.save_button = ctk.CTkButton(self.frame, text='Создать')
+        self.save_button.grid(row=3, column=0, sticky='wn', padx=10)
+        self.cancel_button = ctk.CTkButton(self.frame, text='Отмена', command=self.cancel_button)
+        self.cancel_button.grid(row=3, column=1, sticky='en', padx=10)
+    
+    def cancel_button(self):
+        self.destroy()
+
+class HintWindow(ctk.CTkToplevel):
+    def __init__(self):
+        super().__init__()
+        self.title('Python Interview Assistant - Подсказка')
+        self.geometry('800x480')
+        self.resizable(True, True)
+
+        self.frame = HTMLLabel(self, html='<h3>All right</h3>')
+        self.frame.pack(fill='both', expand=True)
+        self.frame.fit_height()
+
 
 if __name__ == '__main__':
     main_window = Main('Python Interview Assistant', (1280, 720))

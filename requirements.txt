@@ -1,3 +1,0 @@
-customtkinter==5.2.1
-darkdetect==0.8.0
-packaging==23.2
