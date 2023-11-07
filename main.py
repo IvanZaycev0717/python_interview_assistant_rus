@@ -17,6 +17,38 @@ class Main(ctk.CTk):
         self.resizable(False, False)
         self.create_user_window = None
         self.hint_window = None
+        self.url = None
+
+        self.users = ('Masha', 'Petya', 'Vasya')
+
+        self.themes = {
+            0: BASICS,
+            1: OOP,
+            2: PEP8,
+            3: STRUCTURES,
+            4: ALGHORITMS,
+            5: GIT,
+            6: SQL
+        }
+
+        # DATABASE
+        self.database = {
+            8 : (0, 'Сильная типизация', 'Что такое сильная типизация?', 'Пример сильной типизации', '<h1>Сильная типизация</h1>'),
+            9 : (1, 'Типы данных', 'Какие типы данных в Python', 'Пример Типы данных', '<h1>Типы данных/h1>'),
+            10 : (0, 'Класс', 'Что такое класс', 'Пример класса', '<h1>Класс</h1>'),
+            11 : (1, 'Режимы доступа', 'Перечислите все режимы доступа', '', '<h1>Режимы доступа</h1>'),
+            12 : (0, 'Максимальная длина строки', 'Сколько максимальная длина строки в Python', '', '<h1>Максимальная длина строки</h1>'),
+            13 : (1, 'Docstrings', 'Что такое Docstrings', 'Пример Docstrings класса', '<h1>Docstrings</h1>'),
+            14 : (0, 'Динамические массивы', 'Динамический массив в Python', 'Создайте динамический массив из 7 элементов. Вставьте 5 элемент цифру 1', '<h1>Динамические массивы</h1>'),
+            15 : (1, 'Что такое очередь', 'Как в Python реализуется очередь', 'Создайте очередь и добавьте элемент', '<h1>Как в Python реализуется очередь</h1>'),
+            16 : (0, 'Алгоритм простых чисел', 'Реализуйте простые числа', 'Определить относится ли число к простому', '<h1>Алгоритм простых чисел</h1>'),
+            17 : (1, 'Алгоритм Левенштейна', 'Что такое Алгоритм Левенштейна', 'Задача', '<h1>Алгоритм Левенштейна</h1>'),
+            18 : (0, 'git commit', 'Что такое git commit', 'Реализуйте git commit', '<h1>git commit</h1>'),
+            19 : (1, 'git pull', 'Что такое git pull', 'Реализуйте git pull', '<h1>git pull</h1>'),
+            20 : (0, 'Создание таблицы', 'Как создать таблицу в SQL', 'Пример создания таблицы', '<h1>Создание таблицы</h1>'),
+            21 : (1, 'Удаление таблицы', 'Как удалить таблицу в SQL', 'Пример удаление таблицы', '<h1>Удаление таблицы</h1>'),
+
+        }
 
         # Notebook
         self.notebook = ctk.CTkTabview(
@@ -34,9 +66,9 @@ class Main(ctk.CTk):
         self.notebook.add(name='Пройти собеседование')
         self.notebook.set('Профиль пользователей')
 
-        self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user)
+        self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user, self.users)
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'))
-        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.call_hint_window)
+        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.call_hint_window, self.get_url)
 
 
 
@@ -51,32 +83,35 @@ class Main(ctk.CTk):
     
     def call_hint_window(self):
         if self.hint_window is None or not self.hint_window.winfo_exists():
-            self.hint_window = HintWindow()
+            self.hint_window = HintWindow(self.url)
             self.hint_window.focus()
         else:
             self.hint_window.lift()
             self.hint_window.focus()
+    
+    def get_url(self, url):
+        self.url = url
 
-
-    def md_to_html(self, md_file):
-        with open(md_file, 'r', encoding='utf-8') as file:
-            md_content = file.read()
-            html_content = md.markdown(md_content)
-            return str(html_content)
 
 
 
 
 class UserStatisticsTab(ctk.CTkFrame):
-    def __init__(self, parent, create_new_user):
+    def __init__(self, parent, create_new_user, users):
         super().__init__(parent)
         self.width = 1000
         self.place(x=0, y=0)
         self.columnconfigure((0, 1), weight=1)
         self.rowconfigure((0, 1), weight=1)
         self.create_new_user = create_new_user
+        self.users = users
+
+        self.user_var = tk.StringVar(value='==Выберите пользователя==')
 
         self.create_widgets()
+
+        # EVENTS
+        self.combobox1.bind("<<ComboboxSelected>>", lambda event: print(self.user_var.get()))
 
     def create_widgets(self):
         # PINK SCREEN
@@ -86,14 +121,12 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.label1.place(x=30, y=10)
         self.label2 = ctk.CTkLabel(self.choose_user_frame, text='Выберите пользователя', font=('Calibri', 18))
         self.label2.place(x=30, y=50)
-        self.combobox1 = ctk.CTkComboBox(
+        self.combobox1 = ttk.Combobox(
             self.choose_user_frame,
-            width=250,
-            height=35,
-            fg_color='#ffe1e2',
-            button_color='#d07979',
-            button_hover_color='#92465f')
-        self.combobox1.place(x=30, y=80)
+            textvariable=self.user_var,
+            state="readonly")
+        self.combobox1.configure(values=self.users)
+        self.combobox1.place(x=30, y=80, width=250, height=35)
         self.label3 = ctk.CTkLabel(self.choose_user_frame, text='Вы можете создать нового пользователя', font=('Calibri', 18))
         self.label3.place(x=30, y=200)
 
@@ -212,6 +245,8 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress7.place(x=30, y=510)
+    
+
 
 
 class InterviewSettingsTab(ctk.CTkFrame):
@@ -360,13 +395,19 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.sound_label.place(x=710, y=32)
 
 class InterviewPassTab(ctk.CTkFrame):
-    def __init__(self, parent, call_hint_window):
+    def __init__(self, parent, themes, database, call_hint_window, get_url):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
         self.columnconfigure((0, 1), weight=1)
         self.rowconfigure((0, 1), weight=1)
+        self.database = database
+        self.themes = themes
+
         self.call_hint_window = call_hint_window
+        self.get_url = get_url
+
+        self.question_key = None
 
         self.context_menu = tk.Menu(self, tearoff=0)
         self.context_menu.add_command(label="Копировать", command=lambda: self.focus_get().event_generate("<<Copy>>"))
@@ -378,6 +419,7 @@ class InterviewPassTab(ctk.CTkFrame):
         # Events
         self.context_menu_event_loop(self.theory_textbox)
         self.context_menu_event_loop(self.coding_textbox)
+        self.treeview_events()
 
     
     def create_interview_frame(self):
@@ -474,7 +516,7 @@ class InterviewPassTab(ctk.CTkFrame):
             text='Подсказка',
             fg_color='#c1461e',
             hover_color='#ff662a',
-            command=self.call_hint_window
+            command=self.push_hint_button
         ).place(x=20, y=110)
 
     def create_treeview_frame(self):
@@ -487,34 +529,51 @@ class InterviewPassTab(ctk.CTkFrame):
         
         self.question_tree.heading('#0', text='Темы и вопросы собеседования', anchor=tk.W)
 
-
         # adding data
-        self.question_tree.insert('', tk.END, text=BASICS, iid=0, open=True)
-        self.question_tree.insert('', tk.END, text=OOP, iid=1, open=True)
-        self.question_tree.insert('', tk.END, text=PEP8, iid=2, open=True)
-        self.question_tree.insert('', tk.END, text=STRUCTURES, iid=3, open=True)
-        self.question_tree.insert('', tk.END, text=ALGHORITMS, iid=4, open=True)
-        self.question_tree.insert('', tk.END, text=GIT, iid=5, open=True)
-        self.question_tree.insert('', tk.END, text=SQL, iid=7, open=True)
+        for theme_id, theme_title in self.themes.items():
+            self.question_tree.insert('', tk.END, text=theme_title, iid=theme_id, open=True)
 
         # adding children of first node
-        self.question_tree.insert('', tk.END, text='Q1. Динамическая типизация', iid=8, open=False)
-        self.question_tree.insert('', tk.END, text='Q2. Неявная типизация', iid=9, open=False)
-        self.question_tree.insert('', tk.END, text='Q3. Сильная типизация', iid=10, open=False)
-        self.question_tree.insert('', tk.END, text='Q15. Понятие класса', iid=11, open=False)
-        self.question_tree.insert('', tk.END, text='Q30. Допустимая длина строки', iid=12, open=False)
-        self.question_tree.move(8, 0, 0)
-        self.question_tree.move(9, 0, 1)
-        self.question_tree.move(10, 0, 2)
-        self.question_tree.move(11, 1, 0)
-        self.question_tree.move(12, 2, 0)
+        for key, value in self.database.items():
+            self.question_tree.insert('', tk.END, text=f'Q{key-7}. {value[1]}', iid=key, open=False)
+            match key:
+                case 8 | 9: self.question_tree.move(key, 0, value[0])
+                case 10 | 11: self.question_tree.move(key,1, value[0])
+                case 12 | 13: self.question_tree.move(key, 2, value[0])
+                case 14 | 15: self.question_tree.move(key, 3, value[0])
+                case 16 | 17: self.question_tree.move(key, 4, value[0])
+                case 18 | 19: self.question_tree.move(key, 5, value[0])
+                case 20 | 21: self.question_tree.move(key, 6, value[0])
+
 
         self.question_tree.place(x=20, y=20, width=490, height=580)
 
+    def push_hint_button(self):
+        self.get_url(self.database[self.question_key][4] if isinstance(self.question_key, int) else '<h3>Это тема, выберите вопрос</h3>')
+        self.call_hint_window()
     
     def context_menu_event_loop(self, text_box):
         text_box.bind("<Button-3>", lambda event: self.context_menu.post(event.x_root, event.y_root))
         text_box.bind("<Control-c>", lambda event: self.copy_text)
+    
+    def treeview_events(self):
+        self.question_tree.bind('<<TreeviewSelect>>', self.item_select)
+    
+    def insert_question_in_textfield(self, question_key):
+        if question_key is not None:
+            self.theory_textbox.delete('1.0', 'end')
+            self.coding_textbox.delete('1.0', 'end')
+            self.theory_textbox.insert('1.0', self.database[question_key][2])
+            self.coding_textbox.insert('1.0', self.database[question_key][3])
+        else:
+            self.theory_textbox.delete('1.0', 'end')
+            self.coding_textbox.delete('1.0', 'end')
+    
+    def item_select(self, event):
+        for i in self.question_tree.selection():
+            self.question_key = self.question_tree.item(i)['text'].split('. ')[0].strip('Q')
+            self.question_key = int(self.question_key) + 7 if self.question_key.isdigit() else None
+            self.insert_question_in_textfield(self.question_key)
     
     def copy_text(event):
         widget = event.widget
@@ -554,13 +613,14 @@ class CreateNewUser(ctk.CTkToplevel):
         self.destroy()
 
 class HintWindow(ctk.CTkToplevel):
-    def __init__(self):
+    def __init__(self, url):
         super().__init__()
         self.title('Python Interview Assistant - Подсказка')
         self.geometry('800x480')
         self.resizable(True, True)
+        self.url = url
 
-        self.frame = HTMLLabel(self, html='<h3>All right</h3>')
+        self.frame = HTMLLabel(self, html=self.url)
         self.frame.pack(fill='both', expand=True)
         self.frame.fit_height()
 
