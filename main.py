@@ -3,8 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image
 import customtkinter as ctk
-import markdown2 as md
-from tkhtmlview import HTMLLabel, RenderHTML
+import subprocess
 
 from settings import *
 
@@ -16,8 +15,6 @@ class Main(ctk.CTk):
         self.geometry(f'{size[0]}x{size[1]}')
         self.resizable(False, False)
         self.create_user_window = None
-        self.hint_window = None
-        self.url = None
 
         self.users = ('Masha', 'Petya', 'Vasya')
 
@@ -68,7 +65,7 @@ class Main(ctk.CTk):
 
         self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user, self.users)
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'))
-        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.call_hint_window, self.get_url)
+        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database)
 
 
 
@@ -80,18 +77,6 @@ class Main(ctk.CTk):
         else:
             self.create_user_window.lift()
             self.create_user_window.focus()
-    
-    def call_hint_window(self):
-        if self.hint_window is None or not self.hint_window.winfo_exists():
-            self.hint_window = HintWindow(self.url)
-            self.hint_window.focus()
-        else:
-            self.hint_window.lift()
-            self.hint_window.focus()
-    
-    def get_url(self, url):
-        self.url = url
-
 
 
 
@@ -395,7 +380,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.sound_label.place(x=710, y=32)
 
 class InterviewPassTab(ctk.CTkFrame):
-    def __init__(self, parent, themes, database, call_hint_window, get_url):
+    def __init__(self, parent, themes, database):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
@@ -404,8 +389,6 @@ class InterviewPassTab(ctk.CTkFrame):
         self.database = database
         self.themes = themes
 
-        self.call_hint_window = call_hint_window
-        self.get_url = get_url
 
         self.question_key = None
 
@@ -549,8 +532,7 @@ class InterviewPassTab(ctk.CTkFrame):
         self.question_tree.place(x=20, y=20, width=490, height=580)
 
     def push_hint_button(self):
-        self.get_url(self.database[self.question_key][4] if isinstance(self.question_key, int) else '<h3>Это тема, выберите вопрос</h3>')
-        self.call_hint_window()
+        subprocess.Popen(["start", "", 'knowledge/1.pdf'], shell=True)
     
     def context_menu_event_loop(self, text_box):
         text_box.bind("<Button-3>", lambda event: self.context_menu.post(event.x_root, event.y_root))
@@ -611,18 +593,6 @@ class CreateNewUser(ctk.CTkToplevel):
     
     def cancel_button(self):
         self.destroy()
-
-class HintWindow(ctk.CTkToplevel):
-    def __init__(self, url):
-        super().__init__()
-        self.title('Python Interview Assistant - Подсказка')
-        self.geometry('800x480')
-        self.resizable(True, True)
-        self.url = url
-
-        self.frame = HTMLLabel(self, html=self.url)
-        self.frame.pack(fill='both', expand=True)
-        self.frame.fit_height()
 
 
 if __name__ == '__main__':
