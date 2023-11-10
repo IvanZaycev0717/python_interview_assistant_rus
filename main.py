@@ -614,8 +614,8 @@ class HintWindow(ctk.CTkToplevel):
     def __init__(self, title, filepath):
         super().__init__()
         self.title(title)
-        self.geometry('580x520+440+180')
-        self.resizable(width=0, height=0)
+        self.geometry('900x800+440+180')
+        self.resizable(False, False)
         self.rowconfigure((0, 1), weight=1)
         self.columnconfigure((0, 1), weight=1)
 
@@ -627,36 +627,31 @@ class HintWindow(ctk.CTkToplevel):
 
 
         # Top Frame
-        self.top_frame = ctk.CTkFrame(self, width=580, height=460)
+        self.top_frame = ctk.CTkFrame(self, width=850, height=700)
         self.top_frame.grid(row=0, column=0)
-        self.top_frame.grid_propagate(False)
 
         # Bottom Frame
         self.bottom_frame = ctk.CTkFrame(self, width=580, height=50, fg_color='transparent')
         self.bottom_frame.grid(row=1, column=0)
         self.bottom_frame.rowconfigure((0,), weight=1)
-        self.bottom_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        self.bottom_frame.columnconfigure((0, 1, 2), weight=1)
 
         # Vertical Scrolbar
         self.scrolly = ctk.CTkScrollbar(self.top_frame, orientation='vertical')
         self.scrolly.grid(row=0, column=1, sticky='ns')
 
-        # Horizontal Scrolbar
-        self.scrollx  = ctk.CTkScrollbar(self.top_frame, orientation='horizontal')
-        self.scrollx .grid(row=1, column=0, sticky='we')
-
         # Show PDF
-        self.output = ctk.CTkCanvas(self.top_frame, bg='#ECE8F3', width=560, height=435)
-        self.output.configure(yscrollcommand=self.scrolly.set, xscrollcommand=self.scrollx.set)
+        self.output = ctk.CTkCanvas(self.top_frame, bg='#ECE8F3', width=880, height=700)
+        self.output.configure(yscrollcommand=self.scrolly.set)
         self.output.grid(row=0, column=0)
         self.scrolly.configure(command=self.output.yview)
-        self.scrollx.configure(command=self.output.xview)
+        self.output.bind_all('<MouseWheel>', lambda event: self.output.yview_scroll(-1*(event.delta//120), "units"))
 
         # Buttons and page label
         self.upbutton = ctk.CTkButton(self.bottom_frame, text='Предыдущая страница', width=140, command=self.previous_page)
-        self.upbutton.grid(row=0, column=0, padx=5, pady=8)
+        self.upbutton.grid(row=0, column=0, padx=5, pady=5)
         self.downbutton = ctk.CTkButton(self.bottom_frame, text='Следующая страница', width=140, command=self.next_page)
-        self.downbutton.grid(row=0, column=1, pady=8)
+        self.downbutton.grid(row=0, column=1, pady=5)
         self.page_label = ctk.CTkLabel(self.bottom_frame, textvariable=self.pages_amount)
         self.page_label.grid(row=0, column=2, padx=5)
 
@@ -674,11 +669,10 @@ class HintWindow(ctk.CTkToplevel):
             self.img_file = self.miner.get_page(self.current_page)
             self.output.create_image(0, 0, anchor='nw', image=self.img_file)
             self.stringified_current_page = self.current_page + 1
-            self.page_label['text'] = str(self.stringified_current_page) + ' of ' + str(self.numPages)
+            self.pages_amount.set(f'Страница: {self.stringified_current_page} из {self.numPages}')
             region = self.output.bbox(tk.ALL)
             self.output.configure(scrollregion=region)
-            self.pages_amount.set(f'Страница: {self.stringified_current_page} из {self.numPages}')
-    
+
     def next_page(self):
         if self.current_page <= self.numPages - 1:
             self.current_page += 1
@@ -698,7 +692,7 @@ class PDFMiner:
         self.width, self.height = self.first_page.rect.width, self.first_page.rect.height
         zoomdict = {800:0.8, 700:0.6, 600:1.0, 500:1.0}
         width = int(math.floor(self.width / 100.0) * 100)
-        self.zoom = zoomdict[width]
+        self.zoom = 1.5
     
     def get_metadata(self):
         metadata = self.pdf.metadata
