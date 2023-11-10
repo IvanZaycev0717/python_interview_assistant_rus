@@ -1,5 +1,3 @@
-import math
-
 import tkinter as tk
 from tkinter import ttk
 from tkinter import PhotoImage
@@ -534,7 +532,7 @@ class InterviewPassTab(ctk.CTkFrame):
         for data in self.database:
             self.question_tree.insert('', tk.END, text=f'Вопрос {data[0] - 7}. {data[2]}', iid=data[0], open=False)
             match data[0]:
-                case 8 | 9: self.question_tree.move(data[0], 0, data[1])
+                case num if 8 <= num <  10: self.question_tree.move(data[0], 0, data[1])
                 case 10 | 11: self.question_tree.move(data[0], 1, data[1])
                 case 12 | 13: self.question_tree.move(data[0], 2, data[1])
                 case 14 | 15: self.question_tree.move(data[0], 3, data[1])
@@ -645,12 +643,12 @@ class HintWindow(ctk.CTkToplevel):
         self.output.configure(yscrollcommand=self.scrolly.set)
         self.output.grid(row=0, column=0)
         self.scrolly.configure(command=self.output.yview)
-        self.output.bind_all('<MouseWheel>', lambda event: self.output.yview_scroll(-1*(event.delta//120), "units"))
+        self.output.bind('<MouseWheel>', lambda event: self.output.yview_scroll(-1*(event.delta//120), "units"))
 
         # Buttons and page label
-        self.upbutton = ctk.CTkButton(self.bottom_frame, text='Предыдущая страница', width=140, command=self.previous_page)
+        self.upbutton = ctk.CTkButton(self.bottom_frame, text='Предыдущая страница', command=self.previous_page)
         self.upbutton.grid(row=0, column=0, padx=5, pady=5)
-        self.downbutton = ctk.CTkButton(self.bottom_frame, text='Следующая страница', width=140, command=self.next_page)
+        self.downbutton = ctk.CTkButton(self.bottom_frame, text='Следующая страница', command=self.next_page)
         self.downbutton.grid(row=0, column=1, pady=5)
         self.page_label = ctk.CTkLabel(self.bottom_frame, textvariable=self.pages_amount)
         self.page_label.grid(row=0, column=2, padx=5)
@@ -690,8 +688,6 @@ class PDFMiner:
         self.pdf = fitz.open(self.filepath)
         self.first_page = self.pdf.load_page(0)
         self.width, self.height = self.first_page.rect.width, self.first_page.rect.height
-        zoomdict = {800:0.8, 700:0.6, 600:1.0, 500:1.0}
-        width = int(math.floor(self.width / 100.0) * 100)
         self.zoom = 1.5
     
     def get_metadata(self):
