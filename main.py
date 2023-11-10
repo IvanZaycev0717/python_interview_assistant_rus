@@ -1,11 +1,14 @@
+import math
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import PhotoImage
 from PIL import Image
 import customtkinter as ctk
-import subprocess
+import fitz
 
 from settings import *
+
 
 
 class Main(ctk.CTk):
@@ -15,6 +18,7 @@ class Main(ctk.CTk):
         self.geometry(f'{size[0]}x{size[1]}')
         self.resizable(False, False)
         self.create_user_window = None
+        self.hint_window = None
 
         self.users = ('Masha', 'Petya', 'Vasya')
 
@@ -29,23 +33,23 @@ class Main(ctk.CTk):
         }
 
         # DATABASE
-        self.database = {
-            8 : (0, 'Сильная типизация', 'Что такое сильная типизация?', 'Пример сильной типизации', '<h1>Сильная типизация</h1>'),
-            9 : (1, 'Типы данных', 'Какие типы данных в Python', 'Пример Типы данных', '<h1>Типы данных/h1>'),
-            10 : (0, 'Класс', 'Что такое класс', 'Пример класса', '<h1>Класс</h1>'),
-            11 : (1, 'Режимы доступа', 'Перечислите все режимы доступа', '', '<h1>Режимы доступа</h1>'),
-            12 : (0, 'Максимальная длина строки', 'Сколько максимальная длина строки в Python', '', '<h1>Максимальная длина строки</h1>'),
-            13 : (1, 'Docstrings', 'Что такое Docstrings', 'Пример Docstrings класса', '<h1>Docstrings</h1>'),
-            14 : (0, 'Динамические массивы', 'Динамический массив в Python', 'Создайте динамический массив из 7 элементов. Вставьте 5 элемент цифру 1', '<h1>Динамические массивы</h1>'),
-            15 : (1, 'Что такое очередь', 'Как в Python реализуется очередь', 'Создайте очередь и добавьте элемент', '<h1>Как в Python реализуется очередь</h1>'),
-            16 : (0, 'Алгоритм простых чисел', 'Реализуйте простые числа', 'Определить относится ли число к простому', '<h1>Алгоритм простых чисел</h1>'),
-            17 : (1, 'Алгоритм Левенштейна', 'Что такое Алгоритм Левенштейна', 'Задача', '<h1>Алгоритм Левенштейна</h1>'),
-            18 : (0, 'git commit', 'Что такое git commit', 'Реализуйте git commit', '<h1>git commit</h1>'),
-            19 : (1, 'git pull', 'Что такое git pull', 'Реализуйте git pull', '<h1>git pull</h1>'),
-            20 : (0, 'Создание таблицы', 'Как создать таблицу в SQL', 'Пример создания таблицы', '<h1>Создание таблицы</h1>'),
-            21 : (1, 'Удаление таблицы', 'Как удалить таблицу в SQL', 'Пример удаление таблицы', '<h1>Удаление таблицы</h1>'),
+        self.database = [
+            (8, 0, 'Сильная типизация', 'Что такое сильная типизация?', 'Пример сильной типизации', 1),
+            (9, 1, 'Типы данных', 'Какие типы данных в Python', 'Пример Типы данных', 1),
+            (10, 0, 'Класс', 'Что такое класс', 'Пример класса', 2),
+            (11, 1, 'Режимы доступа', 'Перечислите все режимы доступа', '', 2),
+            (12, 0, 'Максимальная длина строки', 'Сколько максимальная длина строки в Python', '', 3),
+            (13, 1, 'Docstrings', 'Что такое Docstrings', 'Пример Docstrings класса', 3),
+            (14, 0, 'Динамические массивы', 'Динамический массив в Python', 'Создайте динамический массив из 7 элементов. Вставьте 5 элемент цифру 1', 4),
+            (15, 1, 'Что такое очередь', 'Как в Python реализуется очередь', 'Создайте очередь и добавьте элемент', 4),
+            (16, 0, 'Алгоритм простых чисел', 'Реализуйте простые числа', 'Определить относится ли число к простому', 4),
+            (17, 1, 'Алгоритм Левенштейна', 'Что такое Алгоритм Левенштейна', 'Задача', 4),
+            (18, 0, 'git commit', 'Что такое git commit', 'Реализуйте git commit', 4),
+            (19, 1, 'git pull', 'Что такое git pull', 'Реализуйте git pull', 4),
+            (20, 0, 'Создание таблицы', 'Как создать таблицу в SQL', 'Пример создания таблицы', 4),
+            (21, 1, 'Удаление таблицы', 'Как удалить таблицу в SQL', 'Пример удаление таблицы', 4),
 
-        }
+        ]
 
         # Notebook
         self.notebook = ctk.CTkTabview(
@@ -65,7 +69,7 @@ class Main(ctk.CTk):
 
         self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user, self.users)
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'))
-        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database)
+        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.show_hint_window)
 
 
 
@@ -77,6 +81,15 @@ class Main(ctk.CTk):
         else:
             self.create_user_window.lift()
             self.create_user_window.focus()
+    
+    def show_hint_window(self, filepath):
+        if self.hint_window is None or not self.hint_window.winfo_exists():
+            self.hint_window = HintWindow('Python Interview Assistant - Подсказка', filepath)
+            self.focus()
+            self.hint_window.focus()
+        else:
+            self.hint_window.lift()
+            self.hint_window.focus()
 
 
 
@@ -380,7 +393,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.sound_label.place(x=710, y=32)
 
 class InterviewPassTab(ctk.CTkFrame):
-    def __init__(self, parent, themes, database):
+    def __init__(self, parent, themes, database, show_hint_window):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
@@ -388,6 +401,7 @@ class InterviewPassTab(ctk.CTkFrame):
         self.rowconfigure((0, 1), weight=1)
         self.database = database
         self.themes = themes
+        self.show_hint_window = show_hint_window
 
 
         self.question_key = None
@@ -517,22 +531,24 @@ class InterviewPassTab(ctk.CTkFrame):
             self.question_tree.insert('', tk.END, text=theme_title, iid=theme_id, open=True)
 
         # adding children of first node
-        for key, value in self.database.items():
-            self.question_tree.insert('', tk.END, text=f'Q{key-7}. {value[1]}', iid=key, open=False)
-            match key:
-                case 8 | 9: self.question_tree.move(key, 0, value[0])
-                case 10 | 11: self.question_tree.move(key,1, value[0])
-                case 12 | 13: self.question_tree.move(key, 2, value[0])
-                case 14 | 15: self.question_tree.move(key, 3, value[0])
-                case 16 | 17: self.question_tree.move(key, 4, value[0])
-                case 18 | 19: self.question_tree.move(key, 5, value[0])
-                case 20 | 21: self.question_tree.move(key, 6, value[0])
+        for data in self.database:
+            self.question_tree.insert('', tk.END, text=f'Вопрос {data[0] - 7}. {data[2]}', iid=data[0], open=False)
+            match data[0]:
+                case 8 | 9: self.question_tree.move(data[0], 0, data[1])
+                case 10 | 11: self.question_tree.move(data[0], 1, data[1])
+                case 12 | 13: self.question_tree.move(data[0], 2, data[1])
+                case 14 | 15: self.question_tree.move(data[0], 3, data[1])
+                case 16 | 17: self.question_tree.move(data[0], 4, data[1])
+                case 18 | 19: self.question_tree.move(data[0], 5, data[1])
+                case 20 | 21: self.question_tree.move(data[0], 6, data[1])
 
 
         self.question_tree.place(x=20, y=20, width=490, height=580)
 
     def push_hint_button(self):
-        subprocess.Popen(["start", "", 'knowledge/1.pdf'], shell=True)
+        if isinstance(self.question_key, int):
+            self.show_hint_window(filepath=f'knowledge/{self.database[self.question_key][5]}.pdf')
+            # subprocess.Popen(["start", "", f'knowledge/{self.database[self.question_key][5]}.pdf'], shell=True)
     
     def context_menu_event_loop(self, text_box):
         text_box.bind("<Button-3>", lambda event: self.context_menu.post(event.x_root, event.y_root))
@@ -545,16 +561,16 @@ class InterviewPassTab(ctk.CTkFrame):
         if question_key is not None:
             self.theory_textbox.delete('1.0', 'end')
             self.coding_textbox.delete('1.0', 'end')
-            self.theory_textbox.insert('1.0', self.database[question_key][2])
-            self.coding_textbox.insert('1.0', self.database[question_key][3])
+            self.theory_textbox.insert('1.0', self.database[question_key][3])
+            self.coding_textbox.insert('1.0', self.database[question_key][4])
         else:
             self.theory_textbox.delete('1.0', 'end')
             self.coding_textbox.delete('1.0', 'end')
     
     def item_select(self, event):
         for i in self.question_tree.selection():
-            self.question_key = self.question_tree.item(i)['text'].split('. ')[0].strip('Q')
-            self.question_key = int(self.question_key) + 7 if self.question_key.isdigit() else None
+            self.question_key = self.question_tree.item(i)['text'].split('. ')[0].strip('Вопрос ')
+            self.question_key = int(self.question_key) - 1 if self.question_key.isdigit() else None
             self.insert_question_in_textfield(self.question_key)
     
     def copy_text(event):
@@ -594,6 +610,116 @@ class CreateNewUser(ctk.CTkToplevel):
     def cancel_button(self):
         self.destroy()
 
+class HintWindow(ctk.CTkToplevel):
+    def __init__(self, title, filepath):
+        super().__init__()
+        self.title(title)
+        self.geometry('580x520+440+180')
+        self.resizable(width=0, height=0)
+        self.rowconfigure((0, 1), weight=1)
+        self.columnconfigure((0, 1), weight=1)
+
+        self.file = filepath
+        self.current_page = 0
+        self.numPages = None 
+
+        self.pages_amount = ctk.StringVar()
+
+
+        # Top Frame
+        self.top_frame = ctk.CTkFrame(self, width=580, height=460)
+        self.top_frame.grid(row=0, column=0)
+        self.top_frame.grid_propagate(False)
+
+        # Bottom Frame
+        self.bottom_frame = ctk.CTkFrame(self, width=580, height=50, fg_color='transparent')
+        self.bottom_frame.grid(row=1, column=0)
+        self.bottom_frame.rowconfigure((0,), weight=1)
+        self.bottom_frame.columnconfigure((0, 1, 2, 3), weight=1)
+
+        # Vertical Scrolbar
+        self.scrolly = ctk.CTkScrollbar(self.top_frame, orientation='vertical')
+        self.scrolly.grid(row=0, column=1, sticky='ns')
+
+        # Horizontal Scrolbar
+        self.scrollx  = ctk.CTkScrollbar(self.top_frame, orientation='horizontal')
+        self.scrollx .grid(row=1, column=0, sticky='we')
+
+        # Show PDF
+        self.output = ctk.CTkCanvas(self.top_frame, bg='#ECE8F3', width=560, height=435)
+        self.output.configure(yscrollcommand=self.scrolly.set, xscrollcommand=self.scrollx.set)
+        self.output.grid(row=0, column=0)
+        self.scrolly.configure(command=self.output.yview)
+        self.scrollx.configure(command=self.output.xview)
+
+        # Buttons and page label
+        self.upbutton = ctk.CTkButton(self.bottom_frame, text='Предыдущая страница', width=140, command=self.previous_page)
+        self.upbutton.grid(row=0, column=0, padx=5, pady=8)
+        self.downbutton = ctk.CTkButton(self.bottom_frame, text='Следующая страница', width=140, command=self.next_page)
+        self.downbutton.grid(row=0, column=1, pady=8)
+        self.page_label = ctk.CTkLabel(self.bottom_frame, textvariable=self.pages_amount)
+        self.page_label.grid(row=0, column=2, padx=5)
+
+
+        if self.file:
+            self.miner = PDFMiner(self.file)
+            data, numPages = self.miner.get_metadata()
+            self.current_page = 0
+            if numPages:
+                self.numPages = numPages
+                self.display_page()
+    
+    def display_page(self):
+        if 0 <= self.current_page < self.numPages:
+            self.img_file = self.miner.get_page(self.current_page)
+            self.output.create_image(0, 0, anchor='nw', image=self.img_file)
+            self.stringified_current_page = self.current_page + 1
+            self.page_label['text'] = str(self.stringified_current_page) + ' of ' + str(self.numPages)
+            region = self.output.bbox(tk.ALL)
+            self.output.configure(scrollregion=region)
+            self.pages_amount.set(f'Страница: {self.stringified_current_page} из {self.numPages}')
+    
+    def next_page(self):
+        if self.current_page <= self.numPages - 1:
+            self.current_page += 1
+            self.display_page()
+
+    
+    def previous_page(self):
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.display_page()
+
+class PDFMiner:
+    def __init__(self, filepath):
+        self.filepath= filepath
+        self.pdf = fitz.open(self.filepath)
+        self.first_page = self.pdf.load_page(0)
+        self.width, self.height = self.first_page.rect.width, self.first_page.rect.height
+        zoomdict = {800:0.8, 700:0.6, 600:1.0, 500:1.0}
+        width = int(math.floor(self.width / 100.0) * 100)
+        self.zoom = zoomdict[width]
+    
+    def get_metadata(self):
+        metadata = self.pdf.metadata
+        numPages = self.pdf.page_count
+        return metadata, numPages
+
+    def get_page(self, page_num):
+        page = self.pdf.load_page(page_num)
+        if self.zoom:
+            mat = fitz.Matrix(self.zoom, self.zoom)
+            pix = page.get_pixmap(matrix=mat)
+        else:
+            pix = page.get_pixmap()
+        px1 = fitz.Pixmap(pix, 0) if pix.alpha else pix
+        imgdata = px1.tobytes("ppm")
+        return PhotoImage(data=imgdata)
+
+    def get_text(self, page_num):
+        page = self.pdf.load_page(page_num)
+        text = page.getText('text')
+        return text
 
 if __name__ == '__main__':
     main_window = Main('Python Interview Assistant', (1280, 720))
