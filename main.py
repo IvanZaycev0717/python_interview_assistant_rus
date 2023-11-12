@@ -492,7 +492,8 @@ class InterviewPassTab(ctk.CTkFrame):
             height=70,
             text='Я правильно ответил на вопрос',
             fg_color='#578555',
-            hover_color='#2d642a'
+            hover_color='#2d642a',
+            command=self.turn_to_green,
         ).place(x=20, y=20)
 
         self.negative_button = ctk.CTkButton(
@@ -501,14 +502,15 @@ class InterviewPassTab(ctk.CTkFrame):
             height=70,
             text='Я не знаю, следующий вопрос',
             fg_color='#ac1416',
-            hover_color='#ce6163'
+            hover_color='#ce6163',
+            command=self.turn_to_red,
         ).place(x=340, y=20)
 
         self.answer_button = ctk.CTkButton(
             master=self.control_frame,
             width=580,
             height=70,
-            text='Подсказка',
+            text='Посмотреть ответ на вопрос',
             fg_color='#c1461e',
             hover_color='#ff662a',
             command=self.push_hint_button
@@ -532,7 +534,7 @@ class InterviewPassTab(ctk.CTkFrame):
         for data in self.database:
             self.question_tree.insert('', tk.END, text=f'Вопрос {data[0] - 7}. {data[2]}', iid=data[0], open=False)
             match data[0]:
-                case num if 8 <= num <  10: self.question_tree.move(data[0], 0, data[1])
+                case num if 8 <= num < 10: self.question_tree.move(data[0], 0, data[1])
                 case 10 | 11: self.question_tree.move(data[0], 1, data[1])
                 case 12 | 13: self.question_tree.move(data[0], 2, data[1])
                 case 14 | 15: self.question_tree.move(data[0], 3, data[1])
@@ -542,6 +544,16 @@ class InterviewPassTab(ctk.CTkFrame):
 
 
         self.question_tree.place(x=20, y=20, width=490, height=580)
+
+    def turn_to_green(self):
+        if isinstance(self.question_key, int):
+            self.question_tree.item(self.question_key + 8, tags=('green', ), values=('green', ))
+            self.question_tree.tag_configure('green', background='green')
+    
+    def turn_to_red(self):
+        if isinstance(self.question_key, int):
+            self.question_tree.item(self.question_key + 8, tags=('red', ), values=('red', ))
+            self.question_tree.tag_configure('red', background='red')
 
     def push_hint_button(self):
         if isinstance(self.question_key, int):
