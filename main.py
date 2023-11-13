@@ -4,6 +4,7 @@ from tkinter import PhotoImage
 from PIL import Image
 import customtkinter as ctk
 import fitz
+import pyttsx3
 
 from settings import *
 
@@ -17,6 +18,7 @@ class Main(ctk.CTk):
         self.resizable(False, False)
         self.create_user_window = None
         self.hint_window = None
+        self.volume = 0.5
 
         self.users = ('Masha', 'Petya', 'Vasya')
 
@@ -66,8 +68,8 @@ class Main(ctk.CTk):
         self.notebook.set('Профиль пользователей')
 
         self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user, self.users)
-        self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'))
-        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.show_hint_window)
+        self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'), self.get_volume, self.set_volume)
+        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.show_hint_window, self.get_volume, self.set_volume)
 
 
 
@@ -88,6 +90,12 @@ class Main(ctk.CTk):
         else:
             self.hint_window.lift()
             self.hint_window.focus()
+    
+    def get_volume(self):
+        return self.volume
+    
+    def set_volume(self, volume):
+        self.volume = volume
 
 
 
@@ -246,7 +254,7 @@ class UserStatisticsTab(ctk.CTkFrame):
 
 
 class InterviewSettingsTab(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, get_volume, set_volume):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
@@ -255,7 +263,11 @@ class InterviewSettingsTab(ctk.CTkFrame):
 
         self.random_var = ctk.IntVar()
         self.freemode_var = ctk.IntVar()
-        self.sound_volume = ctk.IntVar(value=30)
+
+        self.get_volume = get_volume
+        self.set_volume = set_volume
+
+        self.sound_volume = ctk.IntVar(value=int(100 * self.get_volume()))
         self.sound_text = ctk.StringVar(value=f'Громкость: {self.sound_volume.get()}%')
 
         
@@ -382,16 +394,20 @@ class InterviewSettingsTab(ctk.CTkFrame):
             to=100,
             variable=self.sound_volume,
             width=280,
-            command=lambda value: self.sound_text.set(f'Громкость: {self.sound_volume.get()}%'),
+            command=self.transfer_volume_number,
             button_color='#68a248',
             button_hover_color='#68a248',
             progress_color='#68a248')
         self.sound_scale.place(x=420, y=40)
         self.sound_label = ctk.CTkLabel(self.toggle_sounds_frame, textvariable=self.sound_text)
         self.sound_label.place(x=710, y=32)
+    
+    def transfer_volume_number(self, value):
+        self.sound_text.set(f'Громкость: {self.sound_volume.get()}%')
+        self.set_volume(round(int(self.sound_volume.get()) / 100, 1))
 
 class InterviewPassTab(ctk.CTkFrame):
-    def __init__(self, parent, themes, database, show_hint_window):
+    def __init__(self, parent, themes, database, show_hint_window, get_volume, set_volume):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
@@ -400,6 +416,8 @@ class InterviewPassTab(ctk.CTkFrame):
         self.database = database
         self.themes = themes
         self.show_hint_window = show_hint_window
+        self.get_volume = get_volume
+        self.set_volume = set_volume
 
 
         self.question_key = None
@@ -437,8 +455,19 @@ class InterviewPassTab(ctk.CTkFrame):
             height=40,
             text='Проиграть вопрос',
             fg_color='#333f65',
-            hover_color='#232e52')
+            hover_color='#232e52',
+            command=self.speak_theory_question,)
         self.replay_button.place(x=400, y=20)
+
+
+        self.mute_button_img_ON = ctk.CTkImage(
+            light_image=Image.open('images/sound_ON.png').resize((30, 30)),
+            dark_image=Image.open('images/sound_ON.png').resize((30, 30))
+        )
+        self.mute_button_img_OFF = ctk.CTkImage(
+            light_image=Image.open('images/sound_OFF.png').resize((30, 30)),
+            dark_image=Image.open('images/sound_OFF.png').resize((30, 30))
+        )
 
         self.mute_button = ctk.CTkButton(
             master=self.interview_frame,
@@ -446,7 +475,9 @@ class InterviewPassTab(ctk.CTkFrame):
             height=40,
             text='',
             fg_color='#333f65',
-            hover_color='#232e52')
+            hover_color='#232e52',
+            image=self.mute_button_img_ON,
+            command=self.mute_sound)
         self.mute_button.place(x=560, y=20)
 
         ctk.CTkLabel(
@@ -472,7 +503,8 @@ class InterviewPassTab(ctk.CTkFrame):
             height=28,
             text='Проиграть вопрос Live coding',
             fg_color='#333f65',
-            hover_color='#232e52')
+            hover_color='#232e52',
+            command=self.speak_livecoding,)
         self.coding_button.place(x=160, y=242)
 
         self.coding_textbox = ctk.CTkTextbox(
@@ -544,16 +576,39 @@ class InterviewPassTab(ctk.CTkFrame):
 
 
         self.question_tree.place(x=20, y=20, width=490, height=580)
+    
+    def mute_sound(self):
+        if self.get_volume():
+            self.set_volume(0)
+            self.mute_button.configure(image=self.mute_button_img_OFF)
+        else:
+            self.set_volume(0.5)
+            self.mute_button.configure(image=self.mute_button_img_ON)
+
+    def speak_livecoding(self):
+        if self.get_volume() and isinstance(self.question_key, int):
+            engine = pyttsx3.init()
+            engine.setProperty('volume', self.get_volume())
+            engine.say(self.database[self.question_key][4])
+            engine.runAndWait()
+    
+    def speak_theory_question(self):
+        if self.get_volume() and isinstance(self.question_key, int):
+            engine = pyttsx3.init()
+            engine.setProperty('volume', self.get_volume())
+            engine.say(self.database[self.question_key][3])
+            engine.runAndWait()
+
 
     def turn_to_green(self):
         if isinstance(self.question_key, int):
-            self.question_tree.item(self.question_key + 8, tags=('green', ), values=('green', ))
-            self.question_tree.tag_configure('green', background='green')
+            self.question_tree.item(self.question_key + 8, tags=('#b6d7a8', ), values=('#b6d7a8', ))
+            self.question_tree.tag_configure('#b6d7a8', background='#b6d7a8')
     
     def turn_to_red(self):
         if isinstance(self.question_key, int):
-            self.question_tree.item(self.question_key + 8, tags=('red', ), values=('red', ))
-            self.question_tree.tag_configure('red', background='red')
+            self.question_tree.item(self.question_key + 8, tags=('#fea5aa', ), values=('#fea5aa', ))
+            self.question_tree.tag_configure('#fea5aa', background='#fea5aa')
 
     def push_hint_button(self):
         if isinstance(self.question_key, int):
@@ -619,6 +674,7 @@ class CreateNewUser(ctk.CTkToplevel):
     
     def cancel_button(self):
         self.destroy()
+    
 
 class HintWindow(ctk.CTkToplevel):
     def __init__(self, title, filepath):
