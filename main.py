@@ -1,3 +1,4 @@
+import csv
 import tkinter as tk
 from tkinter import ttk
 from tkinter import PhotoImage
@@ -33,23 +34,7 @@ class Main(ctk.CTk):
         }
 
         # DATABASE
-        self.database = [
-            (8, 0, 'Сильная типизация', 'Что такое сильная типизация?', 'Пример сильной типизации', 1),
-            (9, 1, 'Типы данных', 'Какие типы данных в Python', 'Пример Типы данных', 1),
-            (10, 0, 'Класс', 'Что такое класс', 'Пример класса', 2),
-            (11, 1, 'Режимы доступа', 'Перечислите все режимы доступа', '', 2),
-            (12, 0, 'Максимальная длина строки', 'Сколько максимальная длина строки в Python', '', 3),
-            (13, 1, 'Docstrings', 'Что такое Docstrings', 'Пример Docstrings класса', 3),
-            (14, 0, 'Динамические массивы', 'Динамический массив в Python', 'Создайте динамический массив из 7 элементов. Вставьте 5 элемент цифру 1', 4),
-            (15, 1, 'Что такое очередь', 'Как в Python реализуется очередь', 'Создайте очередь и добавьте элемент', 4),
-            (16, 0, 'Алгоритм простых чисел', 'Реализуйте простые числа', 'Определить относится ли число к простому', 4),
-            (17, 1, 'Алгоритм Левенштейна', 'Что такое Алгоритм Левенштейна', 'Задача', 4),
-            (18, 0, 'git commit', 'Что такое git commit', 'Реализуйте git commit', 4),
-            (19, 1, 'git pull', 'Что такое git pull', 'Реализуйте git pull', 4),
-            (20, 0, 'Создание таблицы', 'Как создать таблицу в SQL', 'Пример создания таблицы', 4),
-            (21, 1, 'Удаление таблицы', 'Как удалить таблицу в SQL', 'Пример удаление таблицы', 4),
-
-        ]
+        self.database = self.load_csv()
 
         # Notebook
         self.notebook = ctk.CTkTabview(
@@ -71,7 +56,11 @@ class Main(ctk.CTk):
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'), self.get_volume, self.set_volume)
         self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.show_hint_window, self.get_volume, self.set_volume)
 
-
+    def load_csv(self):
+        with open('data.csv', encoding='utf-8', mode='r') as f:
+            reader = csv.reader(f, delimiter=';')
+            data = tuple(reader)
+        return [tuple([int(item) if item.isdigit() else item for item in row]) for row in data]
 
     def create_new_user(self):
         if self.create_user_window is None or not self.create_user_window.winfo_exists():
@@ -82,9 +71,9 @@ class Main(ctk.CTk):
             self.create_user_window.lift()
             self.create_user_window.focus()
     
-    def show_hint_window(self, filepath):
+    def show_hint_window(self, filepath, page_number):
         if self.hint_window is None or not self.hint_window.winfo_exists():
-            self.hint_window = HintWindow('Python Interview Assistant - Подсказка', filepath)
+            self.hint_window = HintWindow('Python Interview Assistant - Подсказка', filepath, page_number)
             self.focus()
             self.hint_window.focus()
         else:
@@ -566,16 +555,22 @@ class InterviewPassTab(ctk.CTkFrame):
         for data in self.database:
             self.question_tree.insert('', tk.END, text=f'Вопрос {data[0] - 7}. {data[2]}', iid=data[0], open=False)
             match data[0]:
-                case num if 8 <= num < 10: self.question_tree.move(data[0], 0, data[1])
-                case 10 | 11: self.question_tree.move(data[0], 1, data[1])
-                case 12 | 13: self.question_tree.move(data[0], 2, data[1])
-                case 14 | 15: self.question_tree.move(data[0], 3, data[1])
-                case 16 | 17: self.question_tree.move(data[0], 4, data[1])
-                case 18 | 19: self.question_tree.move(data[0], 5, data[1])
-                case 20 | 21: self.question_tree.move(data[0], 6, data[1])
-
+                case num if 8 <= num <= 224: self.question_tree.move(data[0], 0, data[1])
+                case num if 225 <= num <= 335: self.question_tree.move(data[0], 1, data[1])
+                case num if 336 <= num <= 363: self.question_tree.move(data[0], 2, data[1])
+                case num if 364 <= num <= 433: self.question_tree.move(data[0], 3, data[1])
+                case num if 434 <= num <= 473: self.question_tree.move(data[0], 4, data[1])
+                case num if 474 <= num <= 538: self.question_tree.move(data[0], 5, data[1])
+                case num if 539 <= num <= 597: self.question_tree.move(data[0], 6, data[1])
 
         self.question_tree.place(x=20, y=20, width=490, height=580)
+
+        self.scroll_question_tree = ctk.CTkScrollbar(
+            master=self.control_frame,
+            orientation='vertical',
+            command=self.question_tree.yview)
+        self.question_tree.configure(yscrollcommand=self.scroll_question_tree.set)
+        self.scroll_question_tree.place(x=491, y=22, relheight=0.935)
     
     def mute_sound(self):
         if self.get_volume():
@@ -612,7 +607,7 @@ class InterviewPassTab(ctk.CTkFrame):
 
     def push_hint_button(self):
         if isinstance(self.question_key, int):
-            self.show_hint_window(filepath=f'knowledge/{self.database[self.question_key][5]}.pdf')
+            self.show_hint_window(filepath=f'knowledge/{self.database[self.question_key][5]}.pdf', page_number=self.database[self.question_key][6])
             # subprocess.Popen(["start", "", f'knowledge/{self.database[self.question_key][5]}.pdf'], shell=True)
     
     def context_menu_event_loop(self, text_box):
@@ -677,7 +672,7 @@ class CreateNewUser(ctk.CTkToplevel):
     
 
 class HintWindow(ctk.CTkToplevel):
-    def __init__(self, title, filepath):
+    def __init__(self, title, filepath, current_page):
         super().__init__()
         self.title(title)
         self.geometry('900x800+440+180')
@@ -686,7 +681,7 @@ class HintWindow(ctk.CTkToplevel):
         self.columnconfigure((0, 1), weight=1)
 
         self.file = filepath
-        self.current_page = 0
+        self.current_page = current_page
         self.numPages = None 
 
         self.pages_amount = ctk.StringVar()
@@ -725,10 +720,10 @@ class HintWindow(ctk.CTkToplevel):
         if self.file:
             self.miner = PDFMiner(self.file)
             data, numPages = self.miner.get_metadata()
-            self.current_page = 0
             if numPages:
                 self.numPages = numPages
                 self.display_page()
+                
     
     def display_page(self):
         if 0 <= self.current_page < self.numPages:
