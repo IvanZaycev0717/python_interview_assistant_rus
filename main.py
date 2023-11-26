@@ -7,7 +7,7 @@ import customtkinter as ctk
 import fitz
 import pyttsx3
 
-from settings import *
+from settings import Theme, QuestionThreshold as qt
 
 
 
@@ -24,13 +24,13 @@ class Main(ctk.CTk):
         self.users = ('Masha', 'Petya', 'Vasya')
 
         self.themes = {
-            0: BASICS,
-            1: OOP,
-            2: PEP8,
-            3: STRUCTURES,
-            4: ALGHORITMS,
-            5: GIT,
-            6: SQL
+            0: Theme.BASICS.value,
+            1: Theme.OOP.value,
+            2: Theme.PEP8.value,
+            3: Theme.STRUCTURES.value,
+            4: Theme.ALGHORITMS.value,
+            5: Theme.GIT.value,
+            6: Theme.SQL.value
         }
 
         # DATABASE
@@ -55,6 +55,7 @@ class Main(ctk.CTk):
         self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user, self.users)
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'), self.get_volume, self.set_volume)
         self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.show_hint_window, self.get_volume, self.set_volume)
+
 
     def load_csv(self):
         with open('data.csv', encoding='utf-8', mode='r') as f:
@@ -175,7 +176,7 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.label9 = ctk.CTkLabel(self.particular_stats_frame, text='Детальный прогресс по собеседованиям', font=('Calibri', 25))
         self.label9.place(x=30, y=10)
 
-        self.label10 = ctk.CTkLabel(self.particular_stats_frame, text=BASICS, font=('Calibri', 18))
+        self.label10 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.BASICS.value, font=('Calibri', 18))
         self.label10.place(x=30, y=60)
         self.progress1 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -184,7 +185,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress1.place(x=30, y=90)
-        self.label11 = ctk.CTkLabel(self.particular_stats_frame, text=OOP, font=('Calibri', 18))
+        self.label11 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.OOP.value, font=('Calibri', 18))
         self.label11.place(x=30, y=130)
         self.progress2 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -202,7 +203,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress3.place(x=30, y=230)
-        self.label13 = ctk.CTkLabel(self.particular_stats_frame, text=STRUCTURES, font=('Calibri', 18))
+        self.label13 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.STRUCTURES.value, font=('Calibri', 18))
         self.label13.place(x=30, y=270)
         self.progress4 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -211,7 +212,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress4.place(x=30, y=300)
-        self.label14 = ctk.CTkLabel(self.particular_stats_frame, text=ALGHORITMS, font=('Calibri', 18))
+        self.label14 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.ALGHORITMS.value, font=('Calibri', 18))
         self.label14.place(x=30, y=340)
         self.progress5 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -220,7 +221,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress5.place(x=30, y=370)
-        self.label15 = ctk.CTkLabel(self.particular_stats_frame, text=GIT, font=('Calibri', 18))
+        self.label15 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.GIT.value, font=('Calibri', 18))
         self.label15.place(x=30, y=410)
         self.progress6 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -229,7 +230,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress6.place(x=30, y=440)
-        self.label16 = ctk.CTkLabel(self.particular_stats_frame, text=SQL, font=('Calibri', 18))
+        self.label16 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.SQL.value, font=('Calibri', 18))
         self.label16.place(x=30, y=480)
         self.progress7 = ctk.CTkProgressBar(
             self.particular_stats_frame,
@@ -283,7 +284,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.draw_line(self.choose_interview_mode_frame)
         self.basics = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
-            text=BASICS,
+            text=Theme.BASICS.value,
             hover_color='#68a248',
             fg_color='#68a248')
         self.basics.place(x=420, y=15)
@@ -301,25 +302,25 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.pep.place(x=650, y=15)
         self.structures = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
-            text=STRUCTURES,
+            text=Theme.STRUCTURES.value,
             hover_color='#68a248',
             fg_color='#68a248')
         self.structures.place(x=650, y=55)
         self.alghoritms = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
-            text=ALGHORITMS,
+            text=Theme.ALGHORITMS.value,
             hover_color='#68a248',
             fg_color='#68a248')
         self.alghoritms.place(x=870, y=15)
         self.sql = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
-            text=SQL,
+            text=Theme.SQL.value,
             hover_color='#68a248',
             fg_color='#68a248')
         self.sql.place(x=870, y=55)
         self.git = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
-            text=GIT,
+            text=Theme.GIT.value,
             hover_color='#68a248',
             fg_color='#68a248')
         self.git.place(x=1100, y=15)
@@ -477,7 +478,8 @@ class InterviewPassTab(ctk.CTkFrame):
         self.theory_textbox = ctk.CTkTextbox(
             master=self.interview_frame,
             width=580,
-            height=100
+            height=100,
+            font=('Calibri', 18)
         )
         self.theory_textbox.place(x=20, y=120)
         
@@ -499,7 +501,8 @@ class InterviewPassTab(ctk.CTkFrame):
         self.coding_textbox = ctk.CTkTextbox(
             master=self.interview_frame,
             width=580,
-            height=100
+            height=100,
+            font=('Calibri', 18)
         )
         self.coding_textbox.place(x=20, y=280)
     
@@ -549,19 +552,26 @@ class InterviewPassTab(ctk.CTkFrame):
 
         # adding data
         for theme_id, theme_title in self.themes.items():
-            self.question_tree.insert('', tk.END, text=theme_title, iid=theme_id, open=True)
+            self.question_tree.insert('', tk.END, text=theme_title, iid=theme_id, open=False)
 
         # adding children of first node
         for data in self.database:
             self.question_tree.insert('', tk.END, text=f'Вопрос {data[0] - 7}. {data[2]}', iid=data[0], open=False)
             match data[0]:
-                case num if 8 <= num <= 224: self.question_tree.move(data[0], 0, data[1])
-                case num if 225 <= num <= 335: self.question_tree.move(data[0], 1, data[1])
-                case num if 336 <= num <= 363: self.question_tree.move(data[0], 2, data[1])
-                case num if 364 <= num <= 433: self.question_tree.move(data[0], 3, data[1])
-                case num if 434 <= num <= 473: self.question_tree.move(data[0], 4, data[1])
-                case num if 474 <= num <= 538: self.question_tree.move(data[0], 5, data[1])
-                case num if 539 <= num <= 597: self.question_tree.move(data[0], 6, data[1])
+                case num if qt.BASIC_FIRST_QUESTION.value <= num <= qt.BASIC_LAST_QUESTION.value:
+                    self.question_tree.move(data[0], 0, data[1])
+                case num if qt.OOP_FIRST_QUESTION.value <= num <= qt.OOP_LAST_QUESTION.value:
+                    self.question_tree.move(data[0], 1, data[1])
+                case num if qt.PEP8_FIRST_QUESTION.value <= num <= qt.PEP8_LAST_QUESTION.value:
+                    self.question_tree.move(data[0], 2, data[1])
+                case num if qt.STRUCTURES_FIRST_QUESTION.value <= num <= qt.STRUCTURES_LAST_QUESTION.value:
+                    self.question_tree.move(data[0], 3, data[1])
+                case num if qt.ALGHORITMS_FIRST_QUESTION.value <= num <= qt.ALGHORITMS_LAST_QUESTION.value:
+                    self.question_tree.move(data[0], 4, data[1])
+                case num if qt.GIT_FIRST_QUESTION.value <= num <= qt.GIT_LAST_QUESTION.value:
+                    self.question_tree.move(data[0], 5, data[1])
+                case num if qt.SQL_FIRST_QUESTION.value <= num <= qt.SQL_LAST_QUESTION.value:
+                    self.question_tree.move(data[0], 6, data[1])
 
         self.question_tree.place(x=20, y=20, width=490, height=580)
 
@@ -570,7 +580,11 @@ class InterviewPassTab(ctk.CTkFrame):
             orientation='vertical',
             command=self.question_tree.yview)
         self.question_tree.configure(yscrollcommand=self.scroll_question_tree.set)
-        self.scroll_question_tree.place(x=491, y=22, relheight=0.935)
+        self.scroll_question_tree.place(x=500, y=20, relheight=0.945)
+
+        self.style = ttk.Style()
+        self.style.configure('Treeview.Heading', font=('Calibri', 18))
+        self.style.configure('Treeview', font=('Calibri', 12))
     
     def mute_sound(self):
         if self.get_volume():
@@ -682,7 +696,7 @@ class HintWindow(ctk.CTkToplevel):
 
         self.file = filepath
         self.current_page = current_page
-        self.numPages = None 
+        self.numPages = None
 
         self.pages_amount = ctk.StringVar()
 
