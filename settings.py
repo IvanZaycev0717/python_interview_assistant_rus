@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Theme(Enum):
+class Theme(str, Enum):
     BASICS = 'Базовый синтаксис Python'
     OOP = 'Объекто-ориентированное программирование (ООП)'
     PEP8 = 'Правила оформления кода (PEP8, PEP257)'
@@ -9,7 +9,7 @@ class Theme(Enum):
     GIT = 'Git'
     SQL = 'Базы данных и SQL запросы'
 
-class QuestionThreshold(Enum):
+class QuestionThreshold(int, Enum):
     BASIC_FIRST_QUESTION = 8
     BASIC_LAST_QUESTION = 224
 

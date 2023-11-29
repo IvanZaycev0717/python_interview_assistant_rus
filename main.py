@@ -23,14 +23,14 @@ class Main(ctk.CTk):
 
         self.users = ('Masha', 'Petya', 'Vasya')
 
-        self.themes = {
-            0: Theme.BASICS.value,
-            1: Theme.OOP.value,
-            2: Theme.PEP8.value,
-            3: Theme.STRUCTURES.value,
-            4: Theme.ALGHORITMS.value,
-            5: Theme.GIT.value,
-            6: Theme.SQL.value
+        self.themes: dict[int, Theme] = {
+            0: Theme.BASICS,
+            1: Theme.OOP,
+            2: Theme.PEP8,
+            3: Theme.STRUCTURES,
+            4: Theme.ALGHORITMS,
+            5: Theme.GIT,
+            6: Theme.SQL
         }
 
         # DATABASE
@@ -558,19 +558,19 @@ class InterviewPassTab(ctk.CTkFrame):
         for data in self.database:
             self.question_tree.insert('', tk.END, text=f'Вопрос {data[0] - 7}. {data[2]}', iid=data[0], open=False)
             match data[0]:
-                case num if qt.BASIC_FIRST_QUESTION.value <= num <= qt.BASIC_LAST_QUESTION.value:
+                case num if qt.BASIC_FIRST_QUESTION <= num <= qt.BASIC_LAST_QUESTION:
                     self.question_tree.move(data[0], 0, data[1])
-                case num if qt.OOP_FIRST_QUESTION.value <= num <= qt.OOP_LAST_QUESTION.value:
+                case num if qt.OOP_FIRST_QUESTION <= num <= qt.OOP_LAST_QUESTION:
                     self.question_tree.move(data[0], 1, data[1])
-                case num if qt.PEP8_FIRST_QUESTION.value <= num <= qt.PEP8_LAST_QUESTION.value:
+                case num if qt.PEP8_FIRST_QUESTION <= num <= qt.PEP8_LAST_QUESTION:
                     self.question_tree.move(data[0], 2, data[1])
-                case num if qt.STRUCTURES_FIRST_QUESTION.value <= num <= qt.STRUCTURES_LAST_QUESTION.value:
+                case num if qt.STRUCTURES_FIRST_QUESTION <= num <= qt.STRUCTURES_LAST_QUESTION:
                     self.question_tree.move(data[0], 3, data[1])
-                case num if qt.ALGHORITMS_FIRST_QUESTION.value <= num <= qt.ALGHORITMS_LAST_QUESTION.value:
+                case num if qt.ALGHORITMS_FIRST_QUESTION <= num <= qt.ALGHORITMS_LAST_QUESTION:
                     self.question_tree.move(data[0], 4, data[1])
-                case num if qt.GIT_FIRST_QUESTION.value <= num <= qt.GIT_LAST_QUESTION.value:
+                case num if qt.GIT_FIRST_QUESTION <= num <= qt.GIT_LAST_QUESTION:
                     self.question_tree.move(data[0], 5, data[1])
-                case num if qt.SQL_FIRST_QUESTION.value <= num <= qt.SQL_LAST_QUESTION.value:
+                case num if qt.SQL_FIRST_QUESTION <= num <= qt.SQL_LAST_QUESTION:
                     self.question_tree.move(data[0], 6, data[1])
 
         self.question_tree.place(x=20, y=20, width=490, height=580)
