@@ -103,9 +103,19 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.user_var = tk.StringVar(value='==Выберите пользователя==')
 
         self.create_widgets()
+        self.author_note()
+
+
 
         # EVENTS
         self.combobox1.bind("<<ComboboxSelected>>", lambda event: print(self.user_var.get()))
+
+    def author_note(self):
+        self.author_label = ctk.CTkLabel(
+            master=self,
+            text='github.com/IvanZaycev0717\n\nTelegram: @ivanzaycev0717'
+        )
+        self.author_label.place(x=20, y=560)
 
     def create_widgets(self):
         # PINK SCREEN
@@ -154,6 +164,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             image=self.button2_img,
             text_color='black')
         self.button2.place(x=320, y=80)
+
 
 
         # YELLOW SCREEN
