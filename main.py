@@ -8,6 +8,8 @@ import fitz
 import pyttsx3
 
 from settings import Theme, QuestionThreshold as qt
+from models import create_db
+from manage_db import create_new_user
 
 
 
@@ -674,6 +676,8 @@ class CreateNewUser(ctk.CTkToplevel):
         self.geometry('390x160')
         self.resizable(False, False)
 
+        self.user_name=ctk.StringVar()
+
 
         self.frame = ctk.CTkFrame(self, width=350, height=110, fg_color='#d3e4ef')
         self.frame.pack(side='top', expand=True, fill='both', padx=10, pady=10)
@@ -683,16 +687,20 @@ class CreateNewUser(ctk.CTkToplevel):
 
         self.label = ctk.CTkLabel(self.frame, text='Создайте имя пользователя:')
         self.label.grid(row=0, column=0, sticky='ws', padx=10)
-        self.enter = ctk.CTkEntry(self.frame, width=350)
+        self.enter = ctk.CTkEntry(self.frame, width=350, textvariable=self.user_name)
         self.enter.grid(row=1, column=0, sticky='wn', padx=10, columnspan=2)
         self.helper = ctk.CTkLabel(self.frame, text='')
         self.helper.grid(row=2, column=0, sticky='wn', padx=10)
-        self.save_button = ctk.CTkButton(self.frame, text='Создать')
+        self.save_button = ctk.CTkButton(self.frame, text='Создать', command=self.add_to_db)
         self.save_button.grid(row=3, column=0, sticky='wn', padx=10)
-        self.cancel_button = ctk.CTkButton(self.frame, text='Отмена', command=self.cancel_button)
+        self.cancel_button = ctk.CTkButton(self.frame, text='Отмена', command=self.close_the_window)
         self.cancel_button.grid(row=3, column=1, sticky='en', padx=10)
     
-    def cancel_button(self):
+    def close_the_window(self):
+        self.destroy()
+    
+    def add_to_db(self):
+        create_new_user(self.user_name.get())
         self.destroy()
     
 
@@ -800,5 +808,6 @@ class PDFMiner:
         return text
 
 if __name__ == '__main__':
+    create_db()
     main_window = Main('Python Interview Assistant', (1280, 720))
     main_window.mainloop()

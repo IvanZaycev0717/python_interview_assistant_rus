@@ -1,5 +1,13 @@
 from enum import Enum
 
+class ValidResponse(str, Enum):
+    SUCCESS = '*Пользователь успешно создан'
+    EMPTY_NAME = '*Имя пользователя не может быть пустой строкой'
+    FEW_SYMBOLS = '*Имя должно состоять минимум из двух символов'
+    WRONG_FIRST_SYMBOL = '*Имя должно начинаться с буквы'
+    WRONG_SYMBOLS = '*Имя содержит недопустимые символы'
+    NAME_TOO_LONG = '*Имя должно содержать не более 25 символов'
+
 class Theme(str, Enum):
     BASICS = 'Базовый синтаксис Python'
     OOP = 'Объекто-ориентированное программирование (ООП)'

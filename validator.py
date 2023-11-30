@@ -1,7 +1,25 @@
 
+WRONG_SYMBOLS = (
+    '#', '@', '!', '?', '<', '>', '/',
+    '|', '$', '^', '*', '(', ')', '+', '-', '='
+    )
 
-def validate_name(name):
-    pass
 
-def is_in_database(name):
-    pass
+def is_name_empty(user_name):
+    return len(user_name) == 0
+
+
+def is_name_too_short(user_name):
+    return len(user_name) < 2
+
+
+def has_name_first_wrong_symbol(user_name):
+    return user_name[0] in (' ', *WRONG_SYMBOLS, *map(str, range(10)))
+
+
+def has_name_wrong_symbols(user_name):
+    return any({symbol in WRONG_SYMBOLS for symbol in user_name})
+
+
+def is_name_too_long(user_name):
+    return len(user_name) > 25
