@@ -7,9 +7,11 @@ import customtkinter as ctk
 import fitz
 import pyttsx3
 
-from settings import Theme, QuestionThreshold as qt
+from settings import Theme, QuestionThreshold as qt, ValidResponse
 from models import create_db
 from manage_db import create_new_user
+from validator import *
+from my_timers import CommandTimer, MessageTimer
 
 
 
@@ -635,7 +637,6 @@ class InterviewPassTab(ctk.CTkFrame):
     def push_hint_button(self):
         if isinstance(self.question_key, int):
             self.show_hint_window(filepath=f'knowledge/{self.database[self.question_key][5]}.pdf', page_number=self.database[self.question_key][6])
-            # subprocess.Popen(["start", "", f'knowledge/{self.database[self.question_key][5]}.pdf'], shell=True)
     
     def context_menu_event_loop(self, text_box):
         text_box.bind("<Button-3>", lambda event: self.context_menu.post(event.x_root, event.y_root))
@@ -677,6 +678,8 @@ class CreateNewUser(ctk.CTkToplevel):
         self.resizable(False, False)
 
         self.user_name=ctk.StringVar()
+        self.error_message = ctk.StringVar(value='')
+
 
 
         self.frame = ctk.CTkFrame(self, width=350, height=110, fg_color='#d3e4ef')
@@ -689,8 +692,8 @@ class CreateNewUser(ctk.CTkToplevel):
         self.label.grid(row=0, column=0, sticky='ws', padx=10)
         self.enter = ctk.CTkEntry(self.frame, width=350, textvariable=self.user_name)
         self.enter.grid(row=1, column=0, sticky='wn', padx=10, columnspan=2)
-        self.helper = ctk.CTkLabel(self.frame, text='')
-        self.helper.grid(row=2, column=0, sticky='wn', padx=10)
+        self.error_label = ttk.Label(self.frame, textvariable=self.error_message, background='#d3e4ef')
+        self.error_label.grid(row=2, column=0, columnspan=2, sticky='wn', padx=10)
         self.save_button = ctk.CTkButton(self.frame, text='Создать', command=self.add_to_db)
         self.save_button.grid(row=3, column=0, sticky='wn', padx=10)
         self.cancel_button = ctk.CTkButton(self.frame, text='Отмена', command=self.close_the_window)
@@ -700,8 +703,34 @@ class CreateNewUser(ctk.CTkToplevel):
         self.destroy()
     
     def add_to_db(self):
-        create_new_user(self.user_name.get())
-        self.destroy()
+        if is_name_empty(self.user_name.get()):
+            self.error_label.config(background='red')
+            self.error_message.set(ValidResponse.EMPTY_NAME)
+            self.set_timer(3)
+        elif is_name_too_short(self.user_name.get()):
+            self.error_label.config(background='red')
+            self.error_message.set(ValidResponse.SHORT_NAME)
+            self.set_timer(3)
+        elif is_name_too_long(self.user_name.get()):
+            self.error_label.config(background='red')
+            self.error_message.set(ValidResponse.NAME_TOO_LONG)
+            self.set_timer(3)
+        elif has_name_first_wrong_symbol(self.user_name.get()):
+            self.error_label.config(background='red')
+            self.error_message.set(ValidResponse.WRONG_FIRST_SYMBOL)
+            self.set_timer(3)
+        elif has_name_wrong_symbols(self.user_name.get()):
+            self.error_label.config(background='red')
+            self.error_message.set(ValidResponse.WRONG_SYMBOLS)
+            self.set_timer(3)
+        else:
+            self.error_label.config(background='#9effa2')
+            self.error_message.set(ValidResponse.SUCCESS)
+            create_new_user(self.user_name.get())
+            CommandTimer(2, self.destroy)
+    
+    def set_timer(self, delay):
+        MessageTimer(delay, self.error_message, self.error_label)
     
 
 class HintWindow(ctk.CTkToplevel):
