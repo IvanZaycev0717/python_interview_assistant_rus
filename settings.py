@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ValidResponse(str, Enum):
     SUCCESS = '*Пользователь успешно создан'
     EMPTY_NAME = '*Имя пользователя не может быть пустой строкой'
@@ -7,6 +8,7 @@ class ValidResponse(str, Enum):
     WRONG_FIRST_SYMBOL = '*Имя должно начинаться с буквы'
     WRONG_SYMBOLS = '*Имя содержит недопустимые символы'
     NAME_TOO_LONG = '*Имя должно содержать не более 25 символов'
+    USER_ALREADY_EXISTS = '*Пользователь с таким именем уже существует'
 
 class Theme(str, Enum):
     BASICS = 'Базовый синтаксис Python'

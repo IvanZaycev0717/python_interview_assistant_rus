@@ -1,3 +1,4 @@
+from manage_db import get_user_names
 
 WRONG_SYMBOLS = (
     '#', '@', '!', '?', '<', '>', '/',
@@ -23,3 +24,6 @@ def has_name_wrong_symbols(user_name):
 
 def is_name_too_long(user_name):
     return len(user_name) > 25
+
+def is_user_already_exists(user_name):
+    return user_name in get_user_names()

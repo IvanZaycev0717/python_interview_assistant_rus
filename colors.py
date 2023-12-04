@@ -1,0 +1,1 @@
+YELLOW_BACKGROUND = '#fff1c8'

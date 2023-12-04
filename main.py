@@ -7,9 +7,11 @@ import customtkinter as ctk
 import fitz
 import pyttsx3
 
+from colors import *
 from settings import Theme, QuestionThreshold as qt, ValidResponse
 from models import create_db
-from manage_db import create_new_user
+from manage_db import *
+from user_statistics import *
 from validator import *
 from my_timers import CommandTimer, MessageTimer
 
@@ -24,8 +26,8 @@ class Main(ctk.CTk):
         self.create_user_window = None
         self.hint_window = None
         self.volume = 0.5
+        
 
-        self.users = ('Masha', 'Petya', 'Vasya')
 
         self.themes: dict[int, Theme] = {
             0: Theme.BASICS,
@@ -56,7 +58,7 @@ class Main(ctk.CTk):
         self.notebook.add(name='Пройти собеседование')
         self.notebook.set('Профиль пользователей')
 
-        self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user, self.users)
+        self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user)
         self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'), self.get_volume, self.set_volume)
         self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.show_hint_window, self.get_volume, self.set_volume)
 
@@ -92,27 +94,79 @@ class Main(ctk.CTk):
         self.volume = volume
 
 
-
-
 class UserStatisticsTab(ctk.CTkFrame):
-    def __init__(self, parent, create_new_user, users):
+    def __init__(self, parent, create_new_user):
         super().__init__(parent)
         self.width = 1000
         self.place(x=0, y=0)
         self.columnconfigure((0, 1), weight=1)
         self.rowconfigure((0, 1), weight=1)
-        self.create_new_user = create_new_user
-        self.users = users
 
-        self.user_var = tk.StringVar(value='==Выберите пользователя==')
+        
+        # Users vars
+        self.create_new_user = create_new_user
+        self.users = get_user_names()
+        self.current_user = None
+
+        # MESSAGE VARS
+        # pink screen
+        self.user_var = tk.StringVar(value='Выберите пользователя...')
+
+        # yellow screen
+        self.last_enter_message = tk.StringVar()
+        self.interview_duration_message = tk.StringVar()
+        self.rigth_answer_message = tk.StringVar()
+        self.percentage_completion_message = tk.StringVar()
 
         self.create_widgets()
         self.author_note()
 
-
-
         # EVENTS
-        self.combobox1.bind("<<ComboboxSelected>>", lambda event: print(self.user_var.get()))
+        self.combobox1.bind("<<ComboboxSelected>>", self.choose_user)
+
+        # COMBOBOX GLOBAL VAR
+        global statistics_combobox
+        statistics_combobox = self
+
+
+    def update_user_list(self):
+        self.combobox1['values'] = get_user_names()
+
+    def reset_settings(self):
+        self.current_user = None
+        self.user_var.set('Выберите пользователя...')
+        self.last_enter_message.set('')
+        self.interview_duration_message.set('')
+        self.rigth_answer_message.set('')
+        self.percentage_completion_message.set('')
+    
+    def update_user_progress(self):
+        pass
+
+
+    def delete_user(self):
+        delete_this_user(self.current_user)
+        self.reset_settings()
+        self.update_user_list()
+    
+    def choose_user(self, event):
+        self.current_user = self.user_var.get()
+        self.get_current_user_statistics()
+
+    def get_current_user_statistics(self):
+        self.last_enter_message.set(
+            get_last_enter_message(get_last_enter_date(self.current_user))
+        )
+
+        self.interview_duration_message.set(
+            '0'
+        )
+
+        messages_data = get_right_answers_amount(get_user_progress(self.current_user))
+        self.rigth_answer_message.set(messages_data['right_answers_amount'])
+        self.percentage_completion_message.set(messages_data['percentage_completion'])
+        
+
 
     def author_note(self):
         self.author_label = ctk.CTkLabel(
@@ -166,24 +220,60 @@ class UserStatisticsTab(ctk.CTkFrame):
             hover_color='#92465f',
             text='Удалить пользователя',
             image=self.button2_img,
-            text_color='black')
+            text_color='black',
+            command=self.delete_user)
         self.button2.place(x=320, y=80)
 
 
 
         # YELLOW SCREEN
-        self.global_stats_frame = ctk.CTkFrame(self, fg_color='#fff1c8', width=400, height=250)
+        self.global_stats_frame = ctk.CTkFrame(self, fg_color=YELLOW_BACKGROUND, width=400, height=250)
         self.global_stats_frame.grid(row=1, column=0, sticky='e', padx=20, pady=20)
         self.label4 = ctk.CTkLabel(self.global_stats_frame, text='Глобальная статистика', font=('Calibri', 25))
         self.label4.place(x=30, y=10)
-        self.label5 = ctk.CTkLabel(self.global_stats_frame, text='Последний вход', font=('Calibri', 18))
+        self.label5 = ctk.CTkLabel(self.global_stats_frame, text='Последний вход:', font=('Calibri', 18))
         self.label5.place(x=30, y=60)
-        self.label6 = ctk.CTkLabel(self.global_stats_frame, text='Время собеседований', font=('Calibri', 18))
+        self.label6 = ctk.CTkLabel(self.global_stats_frame, text='Время собеседований:', font=('Calibri', 18))
         self.label6.place(x=30, y=110)
-        self.label7 = ctk.CTkLabel(self.global_stats_frame, text='Правильных ответов', font=('Calibri', 18))
+        self.label7 = ctk.CTkLabel(self.global_stats_frame, text='Правильных ответов:', font=('Calibri', 18))
         self.label7.place(x=30, y=160)
-        self.label8 = ctk.CTkLabel(self.global_stats_frame, text='Процент завершения', font=('Calibri', 18))
+        self.label8 = ctk.CTkLabel(self.global_stats_frame, text='Процент завершения:', font=('Calibri', 18))
         self.label8.place(x=30, y=210)
+
+        # statistics messages
+        self.last_enter_label = ttk.Label(
+            master=self.global_stats_frame,
+            textvariable=self.last_enter_message,
+            font=('Calibri', 16),
+            background=YELLOW_BACKGROUND
+            )
+        self.last_enter_label.place(x=180, y=60)
+
+        self.interview_duration_message_label = tk.Label(
+            master=self.global_stats_frame,
+            textvariable=self.interview_duration_message,
+            font=('Calibri', 16),
+            background=YELLOW_BACKGROUND
+        )
+        self.interview_duration_message_label.place(x=220, y=107)
+
+        self.rigth_answer_message_label = ttk.Label(
+            master=self.global_stats_frame,
+            textvariable=self.rigth_answer_message,
+            font=('Calibri', 16),
+            background=YELLOW_BACKGROUND
+        )
+        self.rigth_answer_message_label.place(x=205, y=157)
+
+        self.percentage_completion_message_label = ttk.Label(
+            master=self.global_stats_frame,
+            textvariable=self.percentage_completion_message,
+            font=('Calibri', 16),
+            background=YELLOW_BACKGROUND
+        )
+        self.percentage_completion_message_label.place(x=205, y=208)
+
+
 
         # GREEN SCREEN
         self.particular_stats_frame = ctk.CTkFrame(self, fg_color='#d7e4d1', width=550)
@@ -254,8 +344,8 @@ class UserStatisticsTab(ctk.CTkFrame):
             fg_color='#e6ffda',
             progress_color='#55e400')
         self.progress7.place(x=30, y=510)
-    
 
+        self.progress1.set(0.95)
 
 
 class InterviewSettingsTab(ctk.CTkFrame):
@@ -410,6 +500,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
     def transfer_volume_number(self, value):
         self.sound_text.set(f'Громкость: {self.sound_volume.get()}%')
         self.set_volume(round(int(self.sound_volume.get()) / 100, 1))
+
 
 class InterviewPassTab(ctk.CTkFrame):
     def __init__(self, parent, themes, database, show_hint_window, get_volume, set_volume):
@@ -667,8 +758,8 @@ class InterviewPassTab(ctk.CTkFrame):
         if widget.tag_ranges("sel"):
             selected_text = widget.get("sel.first", "sel.last")
         widget.clipboard_clear()
-        widget.clipboard_append(selected_text)
-    
+        widget.clipboard_append(selected_text)   
+
 
 class CreateNewUser(ctk.CTkToplevel):
     def __init__(self, title):
@@ -703,35 +794,41 @@ class CreateNewUser(ctk.CTkToplevel):
         self.destroy()
     
     def add_to_db(self):
-        if is_name_empty(self.user_name.get()):
+        current_user = self.user_name.get()
+        if is_name_empty(current_user):
             self.error_label.config(background='red')
             self.error_message.set(ValidResponse.EMPTY_NAME)
             self.set_timer(3)
-        elif is_name_too_short(self.user_name.get()):
+        elif is_name_too_short(current_user):
             self.error_label.config(background='red')
             self.error_message.set(ValidResponse.SHORT_NAME)
             self.set_timer(3)
-        elif is_name_too_long(self.user_name.get()):
+        elif is_name_too_long(current_user):
             self.error_label.config(background='red')
             self.error_message.set(ValidResponse.NAME_TOO_LONG)
             self.set_timer(3)
-        elif has_name_first_wrong_symbol(self.user_name.get()):
+        elif has_name_first_wrong_symbol(current_user):
             self.error_label.config(background='red')
             self.error_message.set(ValidResponse.WRONG_FIRST_SYMBOL)
             self.set_timer(3)
-        elif has_name_wrong_symbols(self.user_name.get()):
+        elif has_name_wrong_symbols(current_user):
             self.error_label.config(background='red')
             self.error_message.set(ValidResponse.WRONG_SYMBOLS)
+            self.set_timer(3)
+        elif is_user_already_exists(current_user):
+            self.error_label.config(background='red')
+            self.error_message.set(ValidResponse.USER_ALREADY_EXISTS)
             self.set_timer(3)
         else:
             self.error_label.config(background='#9effa2')
             self.error_message.set(ValidResponse.SUCCESS)
             create_new_user(self.user_name.get())
+            statistics_combobox.update_user_list()
             CommandTimer(2, self.destroy)
     
     def set_timer(self, delay):
         MessageTimer(delay, self.error_message, self.error_label)
-    
+
 
 class HintWindow(ctk.CTkToplevel):
     def __init__(self, title, filepath, current_page):
@@ -807,6 +904,7 @@ class HintWindow(ctk.CTkToplevel):
             self.current_page -= 1
             self.display_page()
 
+
 class PDFMiner:
     def __init__(self, filepath):
         self.filepath= filepath
@@ -835,6 +933,7 @@ class PDFMiner:
         page = self.pdf.load_page(page_num)
         text = page.getText('text')
         return text
+
 
 if __name__ == '__main__':
     create_db()
