@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from threading import Timer
 
+from settings import ValidResponse
+
 
 class MyTimerInterface(ABC):
     """Abstract class for custom timers."""
@@ -28,10 +30,14 @@ class MessageTimer(MyTimerInterface):
 class CommandTimer(MyTimerInterface):
     """Class for performing of command when time has ended."""
 
-    def __init__(self, delay, command):
+    def __init__(self, delay, command, label, message):
         self.delay = Timer(delay, self.timeout)
         self.command = command
+        self.label = label
+        self.message= message
         self.delay.start()
+        self.message.set(ValidResponse.SUCCESS)
+        self.label.config(background='#9effa2')
 
     def timeout(self):
         self.command()

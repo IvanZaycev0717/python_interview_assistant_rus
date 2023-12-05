@@ -120,6 +120,7 @@ class UserStatisticsTab(ctk.CTkFrame):
 
         self.create_widgets()
         self.author_note()
+        self.set_to_zero_progress_bars()
 
         # EVENTS
         self.combobox1.bind("<<ComboboxSelected>>", self.choose_user)
@@ -141,17 +142,34 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.percentage_completion_message.set('')
     
     def update_user_progress(self):
-        pass
-
+        progress = get_right_answers_amount(get_user_progress(self.current_user))
+        self.basic_progress_bar.set(progress['basic_progress'])
+        self.oop_progress_bar.set(progress['oop_progress'])
+        self.pep_progress_bar.set(progress['pep_progress'])
+        self.structures_progress_bar.set(progress['structures_progress'])
+        self.alghoritms_progress_bar.set(progress['alghorimts_progress'])
+        self.git_progress_bar.set(progress['git_progress'])
+        self.sql_progress_bar.set(progress['sql_progress'])
+    
+    def set_to_zero_progress_bars(self):
+        self.basic_progress_bar.set(0)
+        self.oop_progress_bar.set(0)
+        self.pep_progress_bar.set(0)
+        self.structures_progress_bar.set(0)
+        self.alghoritms_progress_bar.set(0)
+        self.git_progress_bar.set(0)
+        self.sql_progress_bar.set(0)
 
     def delete_user(self):
         delete_this_user(self.current_user)
         self.reset_settings()
         self.update_user_list()
+        self.set_to_zero_progress_bars()
     
     def choose_user(self, event):
         self.current_user = self.user_var.get()
         self.get_current_user_statistics()
+        self.update_user_progress()
 
     def get_current_user_statistics(self):
         self.last_enter_message.set(
@@ -278,74 +296,93 @@ class UserStatisticsTab(ctk.CTkFrame):
         # GREEN SCREEN
         self.particular_stats_frame = ctk.CTkFrame(self, fg_color='#d7e4d1', width=550)
         self.particular_stats_frame.grid(row=0, column=1, rowspan=2, sticky='nsew', padx=20, pady=20)
-        self.label9 = ctk.CTkLabel(self.particular_stats_frame, text='Детальный прогресс по собеседованиям', font=('Calibri', 25))
-        self.label9.place(x=30, y=10)
 
-        self.label10 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.BASICS.value, font=('Calibri', 18))
-        self.label10.place(x=30, y=60)
-        self.progress1 = ctk.CTkProgressBar(
-            self.particular_stats_frame,
-            width=480,
-            height=30,
-            fg_color='#e6ffda',
-            progress_color='#55e400')
-        self.progress1.place(x=30, y=90)
-        self.label11 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.OOP.value, font=('Calibri', 18))
-        self.label11.place(x=30, y=130)
-        self.progress2 = ctk.CTkProgressBar(
-            self.particular_stats_frame,
-            width=480,
-            height=30,
-            fg_color='#e6ffda',
-            progress_color='#55e400')
-        self.progress2.place(x=30, y=160)
-        self.label12 = ctk.CTkLabel(self.particular_stats_frame, text='Правила оформления кода (PEP8, PEP257)', font=('Calibri', 18))
-        self.label12.place(x=30, y=200)
-        self.progress3 = ctk.CTkProgressBar(
-            self.particular_stats_frame,
-            width=480,
-            height=30,
-            fg_color='#e6ffda',
-            progress_color='#55e400')
-        self.progress3.place(x=30, y=230)
-        self.label13 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.STRUCTURES.value, font=('Calibri', 18))
-        self.label13.place(x=30, y=270)
-        self.progress4 = ctk.CTkProgressBar(
-            self.particular_stats_frame,
-            width=480,
-            height=30,
-            fg_color='#e6ffda',
-            progress_color='#55e400')
-        self.progress4.place(x=30, y=300)
-        self.label14 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.ALGHORITMS.value, font=('Calibri', 18))
-        self.label14.place(x=30, y=340)
-        self.progress5 = ctk.CTkProgressBar(
-            self.particular_stats_frame,
-            width=480,
-            height=30,
-            fg_color='#e6ffda',
-            progress_color='#55e400')
-        self.progress5.place(x=30, y=370)
-        self.label15 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.GIT.value, font=('Calibri', 18))
-        self.label15.place(x=30, y=410)
-        self.progress6 = ctk.CTkProgressBar(
-            self.particular_stats_frame,
-            width=480,
-            height=30,
-            fg_color='#e6ffda',
-            progress_color='#55e400')
-        self.progress6.place(x=30, y=440)
-        self.label16 = ctk.CTkLabel(self.particular_stats_frame, text=Theme.SQL.value, font=('Calibri', 18))
-        self.label16.place(x=30, y=480)
-        self.progress7 = ctk.CTkProgressBar(
-            self.particular_stats_frame,
-            width=480,
-            height=30,
-            fg_color='#e6ffda',
-            progress_color='#55e400')
-        self.progress7.place(x=30, y=510)
+        self.detail_progress_title = ctk.CTkLabel(self.particular_stats_frame, text='Детальный прогресс по собеседованиям', font=('Calibri', 25))
+        self.detail_progress_title.place(x=30, y=10)
 
-        self.progress1.set(0.95)
+        # Basic syntax progress
+        self.basic_progress_label = ctk.CTkLabel(self.particular_stats_frame, text=Theme.BASICS.value, font=('Calibri', 18))
+        self.basic_progress_label.place(x=30, y=60)
+
+        self.basic_progress_bar = ctk.CTkProgressBar(
+            self.particular_stats_frame,
+            width=480,
+            height=30,
+            fg_color='#e6ffda',
+            progress_color='#55e400')
+        self.basic_progress_bar.place(x=30, y=90)
+
+        # OOP progress
+        self.oop_progress_label = ctk.CTkLabel(self.particular_stats_frame, text=Theme.OOP.value, font=('Calibri', 18))
+        self.oop_progress_label.place(x=30, y=130)
+
+        self.oop_progress_bar = ctk.CTkProgressBar(
+            self.particular_stats_frame,
+            width=480,
+            height=30,
+            fg_color='#e6ffda',
+            progress_color='#55e400')
+        self.oop_progress_bar.place(x=30, y=160)
+
+        # PEP progress
+        self.pep_progress_label = ctk.CTkLabel(self.particular_stats_frame, text='Правила оформления кода (PEP8, PEP257)', font=('Calibri', 18))
+        self.pep_progress_label.place(x=30, y=200)
+
+        self.pep_progress_bar = ctk.CTkProgressBar(
+            self.particular_stats_frame,
+            width=480,
+            height=30,
+            fg_color='#e6ffda',
+            progress_color='#55e400')
+        self.pep_progress_bar.place(x=30, y=230)
+
+        # Structures progress
+        self.structures_progress_label = ctk.CTkLabel(self.particular_stats_frame, text=Theme.STRUCTURES.value, font=('Calibri', 18))
+        self.structures_progress_label.place(x=30, y=270)
+
+        self.structures_progress_bar = ctk.CTkProgressBar(
+            self.particular_stats_frame,
+            width=480,
+            height=30,
+            fg_color='#e6ffda',
+            progress_color='#55e400')
+        self.structures_progress_bar.place(x=30, y=300)
+
+        # Alghoritms progress
+        self.alghoritms_progress_label = ctk.CTkLabel(self.particular_stats_frame, text=Theme.ALGHORITMS.value, font=('Calibri', 18))
+        self.alghoritms_progress_label.place(x=30, y=340)
+
+        self.alghoritms_progress_bar = ctk.CTkProgressBar(
+            self.particular_stats_frame,
+            width=480,
+            height=30,
+            fg_color='#e6ffda',
+            progress_color='#55e400')
+        self.alghoritms_progress_bar.place(x=30, y=370)
+
+        # GIT progress
+        self.git_progress_label = ctk.CTkLabel(self.particular_stats_frame, text=Theme.GIT.value, font=('Calibri', 18))
+        self.git_progress_label.place(x=30, y=410)
+
+        self.git_progress_bar = ctk.CTkProgressBar(
+            self.particular_stats_frame,
+            width=480,
+            height=30,
+            fg_color='#e6ffda',
+            progress_color='#55e400')
+        self.git_progress_bar.place(x=30, y=440)
+
+        # SQL progress
+        self.sql_progress_label = ctk.CTkLabel(self.particular_stats_frame, text=Theme.SQL.value, font=('Calibri', 18))
+        self.sql_progress_label.place(x=30, y=480)
+
+        self.sql_progress_bar = ctk.CTkProgressBar(
+            self.particular_stats_frame,
+            width=480,
+            height=30,
+            fg_color='#e6ffda',
+            progress_color='#55e400')
+        self.sql_progress_bar.place(x=30, y=510)
 
 
 class InterviewSettingsTab(ctk.CTkFrame):
@@ -820,12 +857,10 @@ class CreateNewUser(ctk.CTkToplevel):
             self.error_message.set(ValidResponse.USER_ALREADY_EXISTS)
             self.set_timer(3)
         else:
-            self.error_label.config(background='#9effa2')
-            self.error_message.set(ValidResponse.SUCCESS)
             create_new_user(self.user_name.get())
             statistics_combobox.update_user_list()
-            CommandTimer(2, self.destroy)
-    
+            CommandTimer(1, self.destroy, self.error_label, self.error_message)
+
     def set_timer(self, delay):
         MessageTimer(delay, self.error_message, self.error_label)
 
