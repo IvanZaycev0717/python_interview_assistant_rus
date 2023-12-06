@@ -1,4 +1,5 @@
 import csv
+import threading
 import tkinter as tk
 from tkinter import ttk
 from tkinter import PhotoImage
@@ -71,7 +72,7 @@ class Main(ctk.CTk):
 
     def create_new_user(self):
         if self.create_user_window is None or not self.create_user_window.winfo_exists():
-            self.create_user_window = CreateNewUser('Python Interview Assistant - Добавить пользователя')
+            self.create_user_window = CreateNewUser('Python Interview Assistant - Добавить пользователя', self.update_combobox)
             self.focus()
             self.create_user_window.focus()
         else:
@@ -92,6 +93,16 @@ class Main(ctk.CTk):
     
     def set_volume(self, volume):
         self.volume = volume
+        if not self.volume:
+            self.interview_pass.mute_button.configure(image=self.interview_pass.mute_button_img_OFF)
+        else:
+            self.interview_pass.mute_button.configure(image=self.interview_pass.mute_button_img_ON)
+        hundred_volume = 100 * self.volume
+        self.interview_settings.sound_volume.set(hundred_volume)
+        self.interview_settings.sound_text.set(f'Громкость: {int(hundred_volume)}%')
+    
+    def update_combobox(self):
+        self.userstats.update_user_list()
 
 
 class UserStatisticsTab(ctk.CTkFrame):
@@ -124,10 +135,6 @@ class UserStatisticsTab(ctk.CTkFrame):
 
         # EVENTS
         self.combobox1.bind("<<ComboboxSelected>>", self.choose_user)
-
-        # COMBOBOX GLOBAL VAR
-        global statistics_combobox
-        statistics_combobox = self
 
 
     def update_user_list(self):
@@ -393,8 +400,23 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.columnconfigure((0, ), weight=1)
         self.rowconfigure((0, 1, 2, 3), weight=1)
 
-        self.random_var = ctk.IntVar()
+        self.questions = []
+
+        # Flags in Checkboxes
+        self.basics_chosen = ctk.IntVar(value=1)
+        self.oop_chosen = ctk.IntVar(value=0)
+        self.pep_chosen = ctk.IntVar(value=0)
+        self.structures_chosen = ctk.IntVar(value=0)
+        self.alghoritms_chosen = ctk.IntVar(value=0)
+        self.git_chosen = ctk.IntVar(value=0)
+        self.sql_chosen = ctk.IntVar(value=0)
+
+        # Flags in sequence mode
+        self.are_random_questions = ctk.IntVar(value=1)
+        
+        # Flag in free mode
         self.freemode_var = ctk.IntVar()
+
 
         self.get_volume = get_volume
         self.set_volume = set_volume
@@ -424,47 +446,61 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.choose_interview_mode_frame.grid(row=0, column=0, sticky='n', padx=20, pady=20)
         self.draw_label(self.choose_interview_mode_frame, 'Выбор тем собеседования')
         self.draw_line(self.choose_interview_mode_frame)
+        
         self.basics = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
             text=Theme.BASICS.value,
             hover_color='#68a248',
-            fg_color='#68a248')
+            fg_color='#68a248',
+            variable=self.basics_chosen)
         self.basics.place(x=420, y=15)
+
         self.oop = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
             text='ООП Python',
             hover_color='#68a248',
-            fg_color='#68a248')
+            fg_color='#68a248',
+            variable=self.oop_chosen)
         self.oop.place(x=420, y=55)
+
         self.pep = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
             text='PEP8, PEP257',
             hover_color='#68a248',
-            fg_color='#68a248')
+            fg_color='#68a248',
+            variable=self.pep_chosen)
         self.pep.place(x=650, y=15)
+
         self.structures = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
             text=Theme.STRUCTURES.value,
             hover_color='#68a248',
-            fg_color='#68a248')
+            fg_color='#68a248',
+            variable=self.structures_chosen)
         self.structures.place(x=650, y=55)
+
         self.alghoritms = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
             text=Theme.ALGHORITMS.value,
             hover_color='#68a248',
-            fg_color='#68a248')
+            fg_color='#68a248',
+            variable=self.alghoritms_chosen)
         self.alghoritms.place(x=870, y=15)
+
         self.sql = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
             text=Theme.SQL.value,
             hover_color='#68a248',
-            fg_color='#68a248')
+            fg_color='#68a248',
+            variable=self.sql_chosen)
         self.sql.place(x=870, y=55)
+
         self.git = ctk.CTkCheckBox(
             master=self.choose_interview_mode_frame,
             text=Theme.GIT.value,
             hover_color='#68a248',
-            fg_color='#68a248')
+            fg_color='#68a248',
+            variable=self.git_chosen)
         self.git.place(x=1100, y=15)
 
         
@@ -472,21 +508,24 @@ class InterviewSettingsTab(ctk.CTkFrame):
     def choose_random_interview(self):
         self.choose_random_interview_frame = ctk.CTkFrame(self, fg_color='#e2f7b5', width=1185, height=100)
         self.choose_random_interview_frame.grid(row=1, column=0, sticky='n', padx=20, pady=20)
+
         self.draw_label(self.choose_random_interview_frame, 'Последовательность вопросов')
         self.draw_line(self.choose_random_interview_frame)
+
         self.random_button_off = ctk.CTkRadioButton(
             self.choose_random_interview_frame,
             value=0,
             text='Вопросы задают последовательно',
-            variable=self.random_var,
+            variable=self.are_random_questions,
             fg_color='#68a248',
             hover_color='#68a248')
         self.random_button_off.place(x=420, y=40)
+
         self.random_button_on = ctk.CTkRadioButton(
             self.choose_random_interview_frame,
             value=1,
             text='Вопросы задают случайно',
-            variable=self.random_var,
+            variable=self.are_random_questions,
             fg_color='#68a248',
             hover_color='#68a248')
         self.random_button_on.place(x=700, y=40)
@@ -494,8 +533,10 @@ class InterviewSettingsTab(ctk.CTkFrame):
     def choose_free_mode(self):
         self.choose_free_mode_frame = ctk.CTkFrame(self, fg_color='#e2f7b5', width=1185, height=100)
         self.choose_free_mode_frame.grid(row=2, column=0, sticky='n', padx=20, pady=20)
+
         self.draw_label(self.choose_free_mode_frame, 'Свободное перемещение по вопросам')
         self.draw_line(self.choose_free_mode_frame)
+
         self.freemode_button_on = ctk.CTkRadioButton(
             self.choose_free_mode_frame,
             value=1,
@@ -504,6 +545,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
             fg_color='#68a248',
             hover_color='#68a248')
         self.freemode_button_on.place(x=420, y=40)
+
         self.freemode_button_off = ctk.CTkRadioButton(
             self.choose_free_mode_frame,
             value=0,
@@ -551,6 +593,13 @@ class InterviewPassTab(ctk.CTkFrame):
         self.show_hint_window = show_hint_window
         self.get_volume = get_volume
         self.set_volume = set_volume
+        
+
+        # Flags
+        self.is_interview_in_progress = False
+
+        # Vars
+        self.button_text = ctk.StringVar(value='Начать собеседование')
 
 
         self.question_key = None
@@ -573,14 +622,27 @@ class InterviewPassTab(ctk.CTkFrame):
         self.interview_frame.grid(row=0, column=0, padx=30, pady=10)
 
         # first row
+        self.begin_button_start = ctk.CTkImage(
+            light_image=Image.open('images/start.png').resize((30, 30)),
+            dark_image=Image.open('images/start.png').resize((30, 30))
+        )
+        self.begin_button_stop = ctk.CTkImage(
+            light_image=Image.open('images/stop.png').resize((30, 30)),
+            dark_image=Image.open('images/stop.png').resize((30, 30))
+        )
+
         self.begin_button = ctk.CTkButton(
             master=self.interview_frame,
             width=300,
             height=40,
-            text='Начать собеседование',
-            fg_color='#333f65',
-            hover_color='#232e52')
+            textvariable=self.button_text,
+            fg_color='#d1ff00',
+            text_color='black',
+            hover_color='#ffec00',
+            command=self.begin_interview,
+            image=self.begin_button_start)
         self.begin_button.place(x=20, y=20)
+
 
         self.replay_button = ctk.CTkButton(
             master=self.interview_frame,
@@ -684,11 +746,15 @@ class InterviewPassTab(ctk.CTkFrame):
         ).place(x=20, y=110)
 
     def create_treeview_frame(self):
+        # The frame which has all the widgets
         self.control_frame = ctk.CTkFrame(self, fg_color='#ffd38f', width=530, height=615)
         self.control_frame.grid(row=0, column=1, rowspan=2, pady=10)
 
+
+        # Question tree
         self.question_tree = ttk.Treeview(
             master=self.control_frame,
+            selectmode='none'
         )
         
         self.question_tree.heading('#0', text='Темы и вопросы собеседования', anchor=tk.W)
@@ -728,28 +794,45 @@ class InterviewPassTab(ctk.CTkFrame):
         self.style = ttk.Style()
         self.style.configure('Treeview.Heading', font=('Calibri', 18))
         self.style.configure('Treeview', font=('Calibri', 12))
+
+    def begin_interview(self):
+        if not self.is_interview_in_progress:
+            self.begin_button.configure(image=self.begin_button_stop)
+            self.is_interview_in_progress = True
+            self.button_text.set('Закончить собеседование')
+            self.question_tree.configure(selectmode='browse')
+        else:
+            self.begin_button.configure(image=self.begin_button_start)
+            self.is_interview_in_progress = False
+            self.button_text.set('Начать собеседование')
+            self.question_tree.configure(selectmode='none')
     
     def mute_sound(self):
         if self.get_volume():
             self.set_volume(0)
-            self.mute_button.configure(image=self.mute_button_img_OFF)
         else:
             self.set_volume(0.5)
-            self.mute_button.configure(image=self.mute_button_img_ON)
 
-    def speak_livecoding(self):
+    def prepare_livecoding(self):
         if self.get_volume() and isinstance(self.question_key, int):
             engine = pyttsx3.init()
             engine.setProperty('volume', self.get_volume())
             engine.say(self.database[self.question_key][4])
             engine.runAndWait()
     
-    def speak_theory_question(self):
+    def prepare_theory_question(self):
         if self.get_volume() and isinstance(self.question_key, int):
             engine = pyttsx3.init()
             engine.setProperty('volume', self.get_volume())
             engine.say(self.database[self.question_key][3])
             engine.runAndWait()
+    
+    def speak_theory_question(self):
+        threading.Thread(target=self.prepare_theory_question).start()
+    
+    def speak_livecoding(self):
+        threading.Thread(target=self.prepare_livecoding).start()
+
 
 
     def turn_to_green(self):
@@ -799,11 +882,12 @@ class InterviewPassTab(ctk.CTkFrame):
 
 
 class CreateNewUser(ctk.CTkToplevel):
-    def __init__(self, title):
+    def __init__(self, title, update_combobox):
         super().__init__()
         self.title(title)
         self.geometry('390x160')
         self.resizable(False, False)
+        self.update_combobox = update_combobox
 
         self.user_name=ctk.StringVar()
         self.error_message = ctk.StringVar(value='')
@@ -858,7 +942,7 @@ class CreateNewUser(ctk.CTkToplevel):
             self.set_timer(3)
         else:
             create_new_user(self.user_name.get())
-            statistics_combobox.update_user_list()
+            self.update_combobox()
             CommandTimer(1, self.destroy, self.error_label, self.error_message)
 
     def set_timer(self, delay):
