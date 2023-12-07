@@ -939,6 +939,7 @@ class InterviewPassTab(ctk.CTkFrame):
                 CTkMessagebox(
                     title='Предупреждение',
                     message='Вы не выбрали пользователя. Статистика не ведется и не сохраняется')
+                self.question_tree.configure(selectmode='browse')
             else:
                 self.question_tree.configure(selectmode='none')
                 self.open_chosen_themes()
@@ -998,6 +999,7 @@ class InterviewPassTab(ctk.CTkFrame):
             self.turn_to_green()
             index = self.questions_while_interviewing.popleft()
             self.question_tree.selection_set((str(self.questions_while_interviewing[0]), ))
+            self.question_tree.see((str(self.questions_while_interviewing[0]), ))
             self.user_progress[index] = True
             update_user_progress(self.current_user, self.user_progress)
             self.update_progress()
@@ -1009,12 +1011,14 @@ class InterviewPassTab(ctk.CTkFrame):
         self.turn_to_red()
         self.questions_while_interviewing.rotate(-1)
         self.question_tree.selection_set((str(self.questions_while_interviewing[0]), ))
+        self.question_tree.see((str(self.questions_while_interviewing[0]), ))
 
     def set_pointer_at_first_question(self):
         for question_number in self.question_list:
             self.questions_while_interviewing.append(question_number)
         try:
             self.question_tree.selection_set((str(self.questions_while_interviewing[0]), ))
+            self.question_tree.see((str(self.questions_while_interviewing[0]), ))
         except IndexError:
             pass
 
