@@ -1,15 +1,18 @@
+from collections import deque
 import csv
 import threading
 import tkinter as tk
 from tkinter import ttk
 from tkinter import PhotoImage
+
 from PIL import Image
+from CTkMessagebox import CTkMessagebox
 import customtkinter as ctk
 import fitz
 import pyttsx3
 
 from colors import *
-from settings import Theme, QuestionThreshold as qt, ValidResponse
+from settings import Theme, QuestionThreshold as qt, ValidResponse, APP_NAME, APP_RESOLUTION
 from models import create_db
 from manage_db import *
 from user_statistics import *
@@ -27,9 +30,13 @@ class Main(ctk.CTk):
         self.create_user_window = None
         self.hint_window = None
         self.volume = 0.5
-        
+        self.current_user = None
+        self.user_progress = {}
 
+        # Load questions and create question bank
+        self.question_bank = self.load_csv()
 
+        # Themes dictionary
         self.themes: dict[int, Theme] = {
             0: Theme.BASICS,
             1: Theme.OOP,
@@ -40,8 +47,18 @@ class Main(ctk.CTk):
             6: Theme.SQL
         }
 
-        # DATABASE
-        self.database = self.load_csv()
+        # Interview mode
+        self.interview_mode = {
+            Theme.BASICS: 1,
+            Theme.OOP: 0,
+            Theme.PEP8: 0,
+            Theme.STRUCTURES: 0,
+            Theme.ALGHORITMS: 0,
+            Theme.GIT: 0,
+            Theme.SQL: 0,
+            'Freemode': 0,
+            'Random': 0 
+        }
 
         # Notebook
         self.notebook = ctk.CTkTabview(
@@ -59,9 +76,35 @@ class Main(ctk.CTk):
         self.notebook.add(name='Пройти собеседование')
         self.notebook.set('Профиль пользователей')
 
-        self.userstats = UserStatisticsTab(self.notebook.tab('Профиль пользователей'), self.create_new_user)
-        self.interview_settings = InterviewSettingsTab(self.notebook.tab('Настройки собеседования'), self.get_volume, self.set_volume)
-        self.interview_pass = InterviewPassTab(self.notebook.tab('Пройти собеседование'), self.themes, self.database, self.show_hint_window, self.get_volume, self.set_volume)
+        # Tabs of notebook
+        self.userstats = UserStatisticsTab(
+            parent=self.notebook.tab('Профиль пользователей'),
+            create_new_user=self.create_new_user,
+            set_current_user=self.set_current_user,
+            set_user_progress=self.set_user_progress,
+            set_color_for_user_progress=self.set_color_for_user_progress
+            )
+        
+        self.interview_settings = InterviewSettingsTab(
+            parent=self.notebook.tab('Настройки собеседования'),
+            set_interview_mode=self.set_interview_mode,
+            get_volume=self.get_volume,
+            set_volume=self.set_volume
+            )
+        
+        self.interview_pass = InterviewPassTab(
+            parent=self.notebook.tab('Пройти собеседование'),
+            themes=self.themes,
+            database=self.question_bank,
+            show_hint_window=self.show_hint_window,
+            get_volume=self.get_volume,
+            set_volume=self.set_volume,
+            get_current_user=self.get_current_user,
+            set_notebook_status=self.set_notebook_status,
+            get_interview_mode=self.get_interview_mode,
+            get_user_progress=self.get_user_progress,
+            update_progress=self.update_progress,
+            )
 
 
     def load_csv(self):
@@ -103,10 +146,37 @@ class Main(ctk.CTk):
     
     def update_combobox(self):
         self.userstats.update_user_list()
+    
+    def update_progress(self):
+        self.userstats.update_user_progress()
+
+    def set_interview_mode(self, interview_mode):
+        self.interview_mode = interview_mode
+        
+    def set_current_user(self, current_user):
+        self.current_user = current_user
+    
+    def get_current_user(self):
+        return self.current_user
+
+    def set_notebook_status(self, status):
+        self.notebook.configure(state=status)
+    
+    def get_interview_mode(self):
+        return self.interview_mode
+
+    def set_user_progress(self, user_progress):
+        self.user_progress = user_progress
+
+    def get_user_progress(self):
+        return self.user_progress
+
+    def set_color_for_user_progress(self):
+        self.interview_pass.set_color_for_user_progress() 
 
 
 class UserStatisticsTab(ctk.CTkFrame):
-    def __init__(self, parent, create_new_user):
+    def __init__(self, parent, create_new_user, set_current_user, set_user_progress, set_color_for_user_progress):
         super().__init__(parent)
         self.width = 1000
         self.place(x=0, y=0)
@@ -117,7 +187,10 @@ class UserStatisticsTab(ctk.CTkFrame):
         # Users vars
         self.create_new_user = create_new_user
         self.users = get_user_names()
-        self.current_user = None
+        self.current_user = set_current_user
+        self.set_user_progress = set_user_progress
+        self.chosen_user = None
+        self.set_color_for_user_progress = set_color_for_user_progress
 
         # MESSAGE VARS
         # pink screen
@@ -141,7 +214,8 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.combobox1['values'] = get_user_names()
 
     def reset_settings(self):
-        self.current_user = None
+        self.chosen_user = None
+        self.current_user(self.chosen_user)
         self.user_var.set('Выберите пользователя...')
         self.last_enter_message.set('')
         self.interview_duration_message.set('')
@@ -149,7 +223,7 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.percentage_completion_message.set('')
     
     def update_user_progress(self):
-        progress = get_right_answers_amount(get_user_progress(self.current_user))
+        progress = get_right_answers_amount(get_user_progress(self.chosen_user))
         self.basic_progress_bar.set(progress['basic_progress'])
         self.oop_progress_bar.set(progress['oop_progress'])
         self.pep_progress_bar.set(progress['pep_progress'])
@@ -168,26 +242,30 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.sql_progress_bar.set(0)
 
     def delete_user(self):
-        delete_this_user(self.current_user)
+        delete_this_user(self.chosen_user)
         self.reset_settings()
         self.update_user_list()
         self.set_to_zero_progress_bars()
     
     def choose_user(self, event):
-        self.current_user = self.user_var.get()
+        self.chosen_user = self.user_var.get()
+        self.current_user(self.chosen_user)
+        self.set_user_progress(get_user_progress(self.chosen_user))
         self.get_current_user_statistics()
         self.update_user_progress()
+        self.set_color_for_user_progress()
 
     def get_current_user_statistics(self):
         self.last_enter_message.set(
-            get_last_enter_message(get_last_enter_date(self.current_user))
+            get_last_enter_message(get_last_enter_date(self.chosen_user))
         )
 
         self.interview_duration_message.set(
-            '0'
-        )
+            f'{get_user_interview_duration(self.chosen_user)} ч.'
+            )
+        
 
-        messages_data = get_right_answers_amount(get_user_progress(self.current_user))
+        messages_data = get_right_answers_amount(get_user_progress(self.chosen_user))
         self.rigth_answer_message.set(messages_data['right_answers_amount'])
         self.percentage_completion_message.set(messages_data['percentage_completion'])
         
@@ -204,19 +282,24 @@ class UserStatisticsTab(ctk.CTkFrame):
         # PINK SCREEN
         self.choose_user_frame = ctk.CTkFrame(self, fg_color='#ffcccc', width=600, height=300)
         self.choose_user_frame.grid(row=0, column=0, sticky='n', padx=20, pady=20)
-        self.label1 = ctk.CTkLabel(self.choose_user_frame, text='Управление пользователями', font=('Calibri', 25))
-        self.label1.place(x=30, y=10)
-        self.label2 = ctk.CTkLabel(self.choose_user_frame, text='Выберите пользователя', font=('Calibri', 18))
-        self.label2.place(x=30, y=50)
+
+        # Static labels
+        self.user_manage_label = ctk.CTkLabel(self.choose_user_frame, text='Управление пользователями', font=('Calibri', 25))
+        self.user_manage_label.place(x=30, y=10)
+        self.choose_user_label = ctk.CTkLabel(self.choose_user_frame, text='Выберите пользователя', font=('Calibri', 18))
+        self.choose_user_label.place(x=30, y=50)
+        self.create_new_user_label = ctk.CTkLabel(self.choose_user_frame, text='Вы можете создать нового пользователя', font=('Calibri', 18))
+        self.create_new_user_label.place(x=30, y=200)
+
+        # Combobox
         self.combobox1 = ttk.Combobox(
             self.choose_user_frame,
             textvariable=self.user_var,
             state="readonly")
         self.combobox1.configure(values=self.users)
         self.combobox1.place(x=30, y=80, width=250, height=35)
-        self.label3 = ctk.CTkLabel(self.choose_user_frame, text='Вы можете создать нового пользователя', font=('Calibri', 18))
-        self.label3.place(x=30, y=200)
 
+        # Images at the buttons
         self.button1_img = ctk.CTkImage(
             light_image=Image.open('images/add.png').resize((30, 30)),
             dark_image=Image.open('images/add.png').resize((30, 30))
@@ -225,6 +308,8 @@ class UserStatisticsTab(ctk.CTkFrame):
             light_image=Image.open('images/delete.png').resize((30, 30)),
             dark_image=Image.open('images/delete.png').resize((30, 30))
         )
+
+        # Buttons
         self.button1 = ctk.CTkButton(
             self.choose_user_frame,
             width=250,
@@ -250,29 +335,31 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.button2.place(x=320, y=80)
 
 
-
         # YELLOW SCREEN
+        # frame
         self.global_stats_frame = ctk.CTkFrame(self, fg_color=YELLOW_BACKGROUND, width=400, height=250)
         self.global_stats_frame.grid(row=1, column=0, sticky='e', padx=20, pady=20)
-        self.label4 = ctk.CTkLabel(self.global_stats_frame, text='Глобальная статистика', font=('Calibri', 25))
-        self.label4.place(x=30, y=10)
-        self.label5 = ctk.CTkLabel(self.global_stats_frame, text='Последний вход:', font=('Calibri', 18))
-        self.label5.place(x=30, y=60)
-        self.label6 = ctk.CTkLabel(self.global_stats_frame, text='Время собеседований:', font=('Calibri', 18))
-        self.label6.place(x=30, y=110)
-        self.label7 = ctk.CTkLabel(self.global_stats_frame, text='Правильных ответов:', font=('Calibri', 18))
-        self.label7.place(x=30, y=160)
-        self.label8 = ctk.CTkLabel(self.global_stats_frame, text='Процент завершения:', font=('Calibri', 18))
-        self.label8.place(x=30, y=210)
 
-        # statistics messages
-        self.last_enter_label = ttk.Label(
+        # Static labels
+        self.global_stat_label = ctk.CTkLabel(self.global_stats_frame, text='Глобальная статистика', font=('Calibri', 25))
+        self.global_stat_label.place(x=30, y=10)
+        self.last_enter_label = ctk.CTkLabel(self.global_stats_frame, text='Последний вход:', font=('Calibri', 18))
+        self.last_enter_label.place(x=30, y=60)
+        self.interview_duration_label = ctk.CTkLabel(self.global_stats_frame, text='Время собеседований:', font=('Calibri', 18))
+        self.interview_duration_label.place(x=30, y=110)
+        self.right_answer_amount_label = ctk.CTkLabel(self.global_stats_frame, text='Правильных ответов:', font=('Calibri', 18))
+        self.right_answer_amount_label.place(x=30, y=160)
+        self.percentage_completion_label = ctk.CTkLabel(self.global_stats_frame, text='Процент завершения:', font=('Calibri', 18))
+        self.percentage_completion_label.place(x=30, y=210)
+
+        # Dynamic messages of user's staticstics
+        self.last_enter_message_label = ttk.Label(
             master=self.global_stats_frame,
             textvariable=self.last_enter_message,
             font=('Calibri', 16),
             background=YELLOW_BACKGROUND
             )
-        self.last_enter_label.place(x=180, y=60)
+        self.last_enter_message_label.place(x=180, y=60)
 
         self.interview_duration_message_label = tk.Label(
             master=self.global_stats_frame,
@@ -301,9 +388,10 @@ class UserStatisticsTab(ctk.CTkFrame):
 
 
         # GREEN SCREEN
+        # Frame
         self.particular_stats_frame = ctk.CTkFrame(self, fg_color='#d7e4d1', width=550)
         self.particular_stats_frame.grid(row=0, column=1, rowspan=2, sticky='nsew', padx=20, pady=20)
-
+    
         self.detail_progress_title = ctk.CTkLabel(self.particular_stats_frame, text='Детальный прогресс по собеседованиям', font=('Calibri', 25))
         self.detail_progress_title.place(x=30, y=10)
 
@@ -393,14 +481,14 @@ class UserStatisticsTab(ctk.CTkFrame):
 
 
 class InterviewSettingsTab(ctk.CTkFrame):
-    def __init__(self, parent, get_volume, set_volume):
+    def __init__(self, parent, set_interview_mode, get_volume, set_volume):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
         self.columnconfigure((0, ), weight=1)
         self.rowconfigure((0, 1, 2, 3), weight=1)
+        self.set_interview_mode = set_interview_mode
 
-        self.questions = []
 
         # Flags in Checkboxes
         self.basics_chosen = ctk.IntVar(value=1)
@@ -410,6 +498,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.alghoritms_chosen = ctk.IntVar(value=0)
         self.git_chosen = ctk.IntVar(value=0)
         self.sql_chosen = ctk.IntVar(value=0)
+
 
         # Flags in sequence mode
         self.are_random_questions = ctk.IntVar(value=1)
@@ -452,7 +541,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text=Theme.BASICS.value,
             hover_color='#68a248',
             fg_color='#68a248',
-            variable=self.basics_chosen)
+            variable=self.basics_chosen,
+            command=self.add_chosen_theme)
         self.basics.place(x=420, y=15)
 
         self.oop = ctk.CTkCheckBox(
@@ -460,7 +550,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text='ООП Python',
             hover_color='#68a248',
             fg_color='#68a248',
-            variable=self.oop_chosen)
+            variable=self.oop_chosen,
+            command=self.add_chosen_theme)
         self.oop.place(x=420, y=55)
 
         self.pep = ctk.CTkCheckBox(
@@ -468,7 +559,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text='PEP8, PEP257',
             hover_color='#68a248',
             fg_color='#68a248',
-            variable=self.pep_chosen)
+            variable=self.pep_chosen,
+            command=self.add_chosen_theme)
         self.pep.place(x=650, y=15)
 
         self.structures = ctk.CTkCheckBox(
@@ -476,7 +568,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text=Theme.STRUCTURES.value,
             hover_color='#68a248',
             fg_color='#68a248',
-            variable=self.structures_chosen)
+            variable=self.structures_chosen,
+            command=self.add_chosen_theme)
         self.structures.place(x=650, y=55)
 
         self.alghoritms = ctk.CTkCheckBox(
@@ -484,7 +577,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text=Theme.ALGHORITMS.value,
             hover_color='#68a248',
             fg_color='#68a248',
-            variable=self.alghoritms_chosen)
+            variable=self.alghoritms_chosen,
+            command=self.add_chosen_theme)
         self.alghoritms.place(x=870, y=15)
 
         self.sql = ctk.CTkCheckBox(
@@ -492,7 +586,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text=Theme.SQL.value,
             hover_color='#68a248',
             fg_color='#68a248',
-            variable=self.sql_chosen)
+            variable=self.sql_chosen,
+            command=self.add_chosen_theme)
         self.sql.place(x=870, y=55)
 
         self.git = ctk.CTkCheckBox(
@@ -500,10 +595,24 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text=Theme.GIT.value,
             hover_color='#68a248',
             fg_color='#68a248',
-            variable=self.git_chosen)
+            variable=self.git_chosen,
+            command=self.add_chosen_theme)
         self.git.place(x=1100, y=15)
 
-        
+    def add_chosen_theme(self):
+        self.interview_mode = {
+            Theme.BASICS: self.basics_chosen.get(),
+            Theme.OOP: self.oop_chosen.get(),
+            Theme.PEP8: self.pep_chosen.get(),
+            Theme.STRUCTURES: self.structures_chosen.get(),
+            Theme.ALGHORITMS: self.alghoritms_chosen.get(),
+            Theme.GIT: self.git_chosen.get(),
+            Theme.SQL: self.sql_chosen.get(),
+            'Freemode': self.freemode_var.get(),
+            'Random': self.are_random_questions.get()
+        }
+        self.set_interview_mode(self.interview_mode)
+
 
     def choose_random_interview(self):
         self.choose_random_interview_frame = ctk.CTkFrame(self, fg_color='#e2f7b5', width=1185, height=100)
@@ -518,7 +627,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text='Вопросы задают последовательно',
             variable=self.are_random_questions,
             fg_color='#68a248',
-            hover_color='#68a248')
+            hover_color='#68a248',
+            command=self.add_chosen_theme)
         self.random_button_off.place(x=420, y=40)
 
         self.random_button_on = ctk.CTkRadioButton(
@@ -527,7 +637,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text='Вопросы задают случайно',
             variable=self.are_random_questions,
             fg_color='#68a248',
-            hover_color='#68a248')
+            hover_color='#68a248',
+            command=self.add_chosen_theme)
         self.random_button_on.place(x=700, y=40)
     
     def choose_free_mode(self):
@@ -543,7 +654,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text='Включить свободный выбор вопросов',
             variable=self.freemode_var,
             fg_color='#68a248',
-            hover_color='#68a248')
+            hover_color='#68a248',
+            command=self.add_chosen_theme)
         self.freemode_button_on.place(x=420, y=40)
 
         self.freemode_button_off = ctk.CTkRadioButton(
@@ -552,7 +664,8 @@ class InterviewSettingsTab(ctk.CTkFrame):
             text='Отключить свободный выбор вопросов',
             variable=self.freemode_var,
             fg_color='#68a248',
-            hover_color='#68a248')
+            hover_color='#68a248',
+            command=self.add_chosen_theme)
         self.freemode_button_off.place(x=700, y=40)
 
     def toggle_sounds(self):
@@ -582,17 +695,28 @@ class InterviewSettingsTab(ctk.CTkFrame):
 
 
 class InterviewPassTab(ctk.CTkFrame):
-    def __init__(self, parent, themes, database, show_hint_window, get_volume, set_volume):
+    def __init__(self, parent, themes, database, show_hint_window, get_volume, set_volume, get_current_user, set_notebook_status, get_interview_mode, get_user_progress, update_progress):
         super().__init__(parent)
         self.width = 1200
         self.place(x=0, y=0)
         self.columnconfigure((0, 1), weight=1)
         self.rowconfigure((0, 1), weight=1)
-        self.database = database
+        self.question_bank = database
         self.themes = themes
         self.show_hint_window = show_hint_window
         self.get_volume = get_volume
         self.set_volume = set_volume
+        self.get_current_user = get_current_user
+        self.current_user = None
+        self.set_notebook_status = set_notebook_status
+        self.get_interview_mode = get_interview_mode
+        self.get_user_progress = get_user_progress
+        self.interview_mode = {}
+        self.question_list = []
+        self.user_progress = {}
+        self.questions_while_interviewing = deque()
+        self.pointer = 0
+        self.update_progress = update_progress
         
 
         # Flags
@@ -722,8 +846,9 @@ class InterviewPassTab(ctk.CTkFrame):
             text='Я правильно ответил на вопрос',
             fg_color='#578555',
             hover_color='#2d642a',
-            command=self.turn_to_green,
-        ).place(x=20, y=20)
+            command=self.answer_correctly,
+        )
+        self.positive_button.place(x=20, y=20)
 
         self.negative_button = ctk.CTkButton(
             master=self.control_frame,
@@ -732,8 +857,9 @@ class InterviewPassTab(ctk.CTkFrame):
             text='Я не знаю, следующий вопрос',
             fg_color='#ac1416',
             hover_color='#ce6163',
-            command=self.turn_to_red,
-        ).place(x=340, y=20)
+            command=self.answer_wrong,
+        )
+        self.negative_button.place(x=340, y=20)
 
         self.answer_button = ctk.CTkButton(
             master=self.control_frame,
@@ -764,7 +890,7 @@ class InterviewPassTab(ctk.CTkFrame):
             self.question_tree.insert('', tk.END, text=theme_title, iid=theme_id, open=False)
 
         # adding children of first node
-        for data in self.database:
+        for data in self.question_bank:
             self.question_tree.insert('', tk.END, text=f'Вопрос {data[0] - 7}. {data[2]}', iid=data[0], open=False)
             match data[0]:
                 case num if qt.BASIC_FIRST_QUESTION <= num <= qt.BASIC_LAST_QUESTION:
@@ -796,17 +922,133 @@ class InterviewPassTab(ctk.CTkFrame):
         self.style.configure('Treeview', font=('Calibri', 12))
 
     def begin_interview(self):
+        # Turn ON buttons
+        self.positive_button.configure(state='normal')
+        self.negative_button.configure(state='normal')
+
+        # Loading data
+        self.current_user = self.get_current_user()
+        self.interview_mode = self.get_interview_mode()
+
         if not self.is_interview_in_progress:
             self.begin_button.configure(image=self.begin_button_stop)
-            self.is_interview_in_progress = True
             self.button_text.set('Закончить собеседование')
-            self.question_tree.configure(selectmode='browse')
+            self.is_interview_in_progress = True
+            self.set_notebook_status('disabled')
+            if not self.current_user:
+                CTkMessagebox(
+                    title='Предупреждение',
+                    message='Вы не выбрали пользователя. Статистика не ведется и не сохраняется')
+            else:
+                self.question_tree.configure(selectmode='none')
+                self.open_chosen_themes()
+                self.set_pointer_at_first_question()
         else:
-            self.begin_button.configure(image=self.begin_button_start)
-            self.is_interview_in_progress = False
-            self.button_text.set('Начать собеседование')
-            self.question_tree.configure(selectmode='none')
+            self.stop_interview()
+
+    def stop_interview(self):
+        self.is_interview_in_progress = False
+        self.set_notebook_status('normal')
+        self.begin_button.configure(image=self.begin_button_start)
+        self.button_text.set('Начать собеседование')
+        self.question_tree.configure(selectmode='none')
+        self.question_list.clear()
+        self.positive_button.configure(state='disabled')
+        self.negative_button.configure(state='disabled')
+
+    def open_chosen_themes(self):
+        for theme in self.question_tree.get_children(self.question_tree.focus()):
+            self.question_tree.item(theme, open=False)
+        themes_status = tuple(self.interview_mode.values())[:7]
+        open_themes = [theme_index for theme_index, is_chosen in enumerate(themes_status) if is_chosen]
+        if not open_themes:
+            CTkMessagebox(title='Ошибка', message="Вы не выбрали ни одной темы", icon="cancel", option_1="Отлично")
+            self.stop_interview()
+        for theme in open_themes:
+            self.question_tree.item(theme, open=True)
+        self.generate_question_list(open_themes)
     
+    def generate_question_list(self, open_themes):
+        self.user_progress = self.get_user_progress()
+        user_right_answer = {question_number for question_number, is_right in self.user_progress.items() if is_right}
+
+        for theme in open_themes:
+            match theme:
+                case 0:
+                    self.question_list += [question_number for question_number in range(qt.BASIC_FIRST_QUESTION, qt.BASIC_LAST_QUESTION + 1)]
+                case 1:
+                    self.question_list += [question_number for question_number in range(qt.OOP_FIRST_QUESTION, qt.OOP_LAST_QUESTION + 1)]
+                case 2:
+                    self.question_list += [question_number for question_number in range(qt.PEP8_FIRST_QUESTION, qt.PEP8_LAST_QUESTION + 1)]
+                case 3:
+                    self.question_list += [question_number for question_number in range(qt.STRUCTURES_FIRST_QUESTION, qt.STRUCTURES_LAST_QUESTION + 1)]
+                case 4:
+                    self.question_list += [question_number for question_number in range(qt.ALGHORITMS_FIRST_QUESTION, qt.ALGHORITMS_LAST_QUESTION + 1)]
+                case 5:
+                    self.question_list += [question_number for question_number in range(qt.GIT_FIRST_QUESTION, qt.GIT_LAST_QUESTION + 1)]
+                case 6:
+                    self.question_list += [question_number for question_number in range(qt.SQL_FIRST_QUESTION, qt.SQL_LAST_QUESTION + 1)]
+        self.question_list = [question_number for question_number in self.question_list if question_number not in user_right_answer]
+
+    
+
+    # CORRECT OR WRONG ANSWER SECTION
+    def answer_correctly(self):
+        try:
+            self.turn_to_green()
+            index = self.questions_while_interviewing.popleft()
+            self.question_tree.selection_set((str(self.questions_while_interviewing[0]), ))
+            self.user_progress[index] = True
+            update_user_progress(self.current_user, self.user_progress)
+            self.update_progress()
+        except IndexError:
+            self.stop_interview()
+            CTkMessagebox(title='Вы ответили на все вопросы', message="Поздравляем! Вы ответили на все вопросы данной темы", icon="check", option_1="Отлично")
+
+    def answer_wrong(self):
+        self.turn_to_red()
+        self.questions_while_interviewing.rotate(-1)
+        self.question_tree.selection_set((str(self.questions_while_interviewing[0]), ))
+
+    def set_pointer_at_first_question(self):
+        for question_number in self.question_list:
+            self.questions_while_interviewing.append(question_number)
+        try:
+            self.question_tree.selection_set((str(self.questions_while_interviewing[0]), ))
+        except IndexError:
+            pass
+
+
+    def set_color_for_user_progress(self):
+        # Set zero (white) color in everywhere
+        for question_number in range(qt.BASIC_FIRST_QUESTION, qt.SQL_LAST_QUESTION + 1):
+            self.question_tree.item(question_number, tags=(WHITE, ), values=(WHITE, ))
+            self.question_tree.tag_configure(WHITE, background=WHITE)
+        
+        # Get user progress
+        self.user_progress = self.get_user_progress()
+
+        # Get color of questions according user progress
+        for question_number, is_right in self.user_progress.items():
+            if is_right:
+                self.question_tree.item(question_number, tags=(GREEN, ), values=(GREEN, ))
+                self.question_tree.tag_configure(GREEN, background=GREEN)
+
+    def turn_to_green(self):
+        if isinstance(self.question_key, int):
+            self.question_tree.item(self.question_key + 8, tags=(GREEN, ), values=(GREEN, ))
+            self.question_tree.tag_configure(GREEN, background=GREEN)
+
+    def turn_to_red(self):
+        if isinstance(self.question_key, int):
+            self.question_tree.item(self.question_key + 8, tags=(RED, ), values=(RED, ))
+            self.question_tree.tag_configure(RED, background=RED)
+
+    def push_hint_button(self):
+        if isinstance(self.question_key, int):
+            self.show_hint_window(filepath=f'knowledge/{self.question_bank[self.question_key][5]}.pdf', page_number=self.question_bank[self.question_key][6])
+    
+    # SOUNDS AND VOLUME SECTION
     def mute_sound(self):
         if self.get_volume():
             self.set_volume(0)
@@ -817,14 +1059,14 @@ class InterviewPassTab(ctk.CTkFrame):
         if self.get_volume() and isinstance(self.question_key, int):
             engine = pyttsx3.init()
             engine.setProperty('volume', self.get_volume())
-            engine.say(self.database[self.question_key][4])
+            engine.say(self.question_bank[self.question_key][4])
             engine.runAndWait()
     
     def prepare_theory_question(self):
         if self.get_volume() and isinstance(self.question_key, int):
             engine = pyttsx3.init()
             engine.setProperty('volume', self.get_volume())
-            engine.say(self.database[self.question_key][3])
+            engine.say(self.question_bank[self.question_key][3])
             engine.runAndWait()
     
     def speak_theory_question(self):
@@ -833,22 +1075,7 @@ class InterviewPassTab(ctk.CTkFrame):
     def speak_livecoding(self):
         threading.Thread(target=self.prepare_livecoding).start()
 
-
-
-    def turn_to_green(self):
-        if isinstance(self.question_key, int):
-            self.question_tree.item(self.question_key + 8, tags=('#b6d7a8', ), values=('#b6d7a8', ))
-            self.question_tree.tag_configure('#b6d7a8', background='#b6d7a8')
-    
-    def turn_to_red(self):
-        if isinstance(self.question_key, int):
-            self.question_tree.item(self.question_key + 8, tags=('#fea5aa', ), values=('#fea5aa', ))
-            self.question_tree.tag_configure('#fea5aa', background='#fea5aa')
-
-    def push_hint_button(self):
-        if isinstance(self.question_key, int):
-            self.show_hint_window(filepath=f'knowledge/{self.database[self.question_key][5]}.pdf', page_number=self.database[self.question_key][6])
-    
+    # EVENTS SECTION
     def context_menu_event_loop(self, text_box):
         text_box.bind("<Button-3>", lambda event: self.context_menu.post(event.x_root, event.y_root))
         text_box.bind("<Control-c>", lambda event: self.copy_text)
@@ -860,8 +1087,8 @@ class InterviewPassTab(ctk.CTkFrame):
         if question_key is not None:
             self.theory_textbox.delete('1.0', 'end')
             self.coding_textbox.delete('1.0', 'end')
-            self.theory_textbox.insert('1.0', self.database[question_key][3])
-            self.coding_textbox.insert('1.0', self.database[question_key][4])
+            self.theory_textbox.insert('1.0', self.question_bank[question_key][3])
+            self.coding_textbox.insert('1.0', self.question_bank[question_key][4])
         else:
             self.theory_textbox.delete('1.0', 'end')
             self.coding_textbox.delete('1.0', 'end')
@@ -1056,5 +1283,5 @@ class PDFMiner:
 
 if __name__ == '__main__':
     create_db()
-    main_window = Main('Python Interview Assistant', (1280, 720))
+    main_window = Main(APP_NAME, APP_RESOLUTION)
     main_window.mainloop()

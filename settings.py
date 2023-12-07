@@ -1,5 +1,7 @@
 from enum import Enum
 
+APP_NAME = 'Python Interview Assistant'
+APP_RESOLUTION = (1280, 720)
 
 class ValidResponse(str, Enum):
     SUCCESS = '*Пользователь успешно создан'

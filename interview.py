@@ -6,4 +6,6 @@ shuffle(a)
 print(a)
 
 class InterviewMechanics:
-    pass
+    
+    def __init__(self):
+        pass
