@@ -1,7 +1,17 @@
 from enum import Enum
 
+# App setup
 APP_NAME = 'Python Interview Assistant'
 APP_RESOLUTION = (1280, 720)
+CREATE_USER_WINDOW = 'Добавить пользователя'
+HINT_WINDOW_TITLE = 'Подсказка'
+
+# Validator section
+WRONG_SYMBOLS = (
+    '#', '@', '!', '?', '<', '>', '/',
+    '|', '$', '^', '*', '(', ')', '+', '-', '='
+    )
+
 
 class ValidResponse(str, Enum):
     SUCCESS = '*Пользователь успешно создан'
@@ -12,6 +22,7 @@ class ValidResponse(str, Enum):
     NAME_TOO_LONG = '*Имя должно содержать не более 25 символов'
     USER_ALREADY_EXISTS = '*Пользователь с таким именем уже существует'
 
+
 class Theme(str, Enum):
     BASICS = 'Базовый синтаксис Python'
     OOP = 'Объекто-ориентированное программирование (ООП)'
@@ -20,6 +31,7 @@ class Theme(str, Enum):
     ALGHORITMS = 'Алгоритмы на Python'
     GIT = 'Git'
     SQL = 'Базы данных и SQL запросы'
+
 
 class QuestionThreshold(int, Enum):
     BASIC_FIRST_QUESTION = 8
@@ -42,5 +54,3 @@ class QuestionThreshold(int, Enum):
 
     SQL_FIRST_QUESTION = 539
     SQL_LAST_QUESTION = 597
-
-

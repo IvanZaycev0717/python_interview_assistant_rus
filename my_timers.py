@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from threading import Timer
+from colors import ERROR_COLOR, SUCCESS_COLOR
 
 from settings import ValidResponse
 
@@ -24,7 +25,7 @@ class MessageTimer(MyTimerInterface):
 
     def timeout(self):
         self.condition.set('')
-        self.label.config(background='#d3e4ef')
+        self.label.config(background=ERROR_COLOR)
 
 
 class CommandTimer(MyTimerInterface):
@@ -34,10 +35,10 @@ class CommandTimer(MyTimerInterface):
         self.delay = Timer(delay, self.timeout)
         self.command = command
         self.label = label
-        self.message= message
+        self.message = message
         self.delay.start()
         self.message.set(ValidResponse.SUCCESS)
-        self.label.config(background='#9effa2')
+        self.label.config(background=SUCCESS_COLOR)
 
     def timeout(self):
         self.command()

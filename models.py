@@ -1,6 +1,5 @@
 import os
-import datetime
-import json
+from typing import Type
 
 from sqlalchemy import create_engine
 from sqlalchemy import DateTime, Integer, JSON, String
@@ -22,10 +21,10 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_name: Mapped[str] = mapped_column(String(25))
-    last_enter_date: Mapped[datetime] = mapped_column(DateTime)
-    last_action_date: Mapped[datetime] = mapped_column(DateTime)
+    last_enter_date: Mapped[Type] = mapped_column(DateTime)
+    last_action_date: Mapped[Type] = mapped_column(DateTime)
     interviews_duration: Mapped[int] = mapped_column(Integer)
-    progress: Mapped[json] = mapped_column(JSON)
+    progress: Mapped[Type] = mapped_column(JSON)
 
 
 def create_db() -> None:
