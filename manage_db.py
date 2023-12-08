@@ -1,6 +1,5 @@
 import datetime
 import json
-from typing import Literal
 
 from sqlalchemy import delete, insert, select, update
 
@@ -9,7 +8,7 @@ from settings import QuestionThreshold as qt
 
 
 # user_name column
-def create_new_user(user_name):
+def create_new_user(user_name: str) -> None:
     with engine.connect() as conn:
         conn.execute(insert(User).values(
             user_name=user_name,
@@ -20,7 +19,7 @@ def create_new_user(user_name):
         conn.commit()
 
 
-def get_user_names():
+def get_user_names() -> list[str]:
     names = get_users_list()
     return [person for name in names for person in name]
 
@@ -31,6 +30,7 @@ def get_users_list() -> list[tuple[str]]:
         conn.commit()
     return result.all()
 
+
 def delete_this_user(user_name: str) -> None:
     with engine.connect() as conn:
         conn.execute(delete(User).where(User.user_name == user_name))
@@ -38,7 +38,7 @@ def delete_this_user(user_name: str) -> None:
 
 
 # last_enter_date Column
-def get_last_enter_date(user_name: str) -> datetime:
+def get_last_enter_date(user_name: str) -> datetime.datetime:
     with engine.connect() as conn:
         result = conn.execute(
             select(User.last_enter_date).where(
@@ -55,7 +55,6 @@ def update_last_enter_date(user_name: str, date) -> None:
         conn.commit()
 
 
-
 # interview_duration Column
 def get_user_interview_duration(user_name: str) -> int:
     with engine.connect() as conn:
@@ -66,30 +65,37 @@ def get_user_interview_duration(user_name: str) -> int:
         conn.commit()
     return int(interview_duration[0])
 
+
 def update_interview_duration(user_name: str, duration) -> None:
     with engine.connect() as conn:
         conn.execute(
             update(User).where(
-                User.user_name == user_name).values(interviews_duration=duration))
+                User.user_name == user_name).values(
+                    interviews_duration=duration
+                    )
+                    )
         conn.commit()
+
 
 # progress Column
 def get_user_progress(
-        user_name: str) -> dict[Literal['question number'], bool]:
+        user_name: str) -> dict[int, bool]:
     progress = json.loads(load_user_progress(user_name))
     return {
         int(question_number): is_rigth
         for question_number, is_rigth in progress.items()
         }
 
-def load_user_progress(user_name: str) -> list[tuple[str]]:
+
+def load_user_progress(user_name: str) -> str:
     with engine.connect() as conn:
         result = conn.execute(select(User.progress).where(
             User.user_name == user_name))
         conn.commit()
     return result.all()[0][0]
 
-def update_user_progress(user_name, progress: dict) -> json:
+
+def update_user_progress(user_name: str, progress: dict) -> None:
     with engine.connect() as conn:
         conn.execute(
             update(User).where(
@@ -97,12 +103,13 @@ def update_user_progress(user_name, progress: dict) -> json:
                     progress=json.dumps(progress)))
         conn.commit()
 
+
 # Support functions
-def _get_zero_progress() -> json:
+def _get_zero_progress() -> str:
     return json.dumps(_create_zero_progress())
 
 
-def _create_zero_progress() -> dict[Literal['question number'], bool]:
+def _create_zero_progress() -> dict[int, bool]:
     return {
         question_number: False for question_number
         in range(qt.BASIC_FIRST_QUESTION, qt.SQL_LAST_QUESTION + 1)

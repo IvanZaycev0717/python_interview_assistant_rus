@@ -1,7 +1,5 @@
 import datetime
-import time
-from types import NoneType
-from typing import Any, Type, TypedDict
+from typing import TypedDict
 
 from settings import QuestionThreshold as qt
 
@@ -80,7 +78,11 @@ def get_right_answers_amount(progress: dict) -> StatInformation:
 
 
 def get_last_enter_message(date) -> str:
-    return f'{date.day}.{date.month}.{date.year}' if type(date) == datetime.datetime else 'не было'
+    return (
+        f'{date.day}.{date.month}.{date.year}'
+        if type(date) is datetime.datetime
+        else 'не было'
+        )
 
 
 def get_paticular_progress(
@@ -92,10 +94,12 @@ def get_paticular_progress(
              in range(from_, to_) and is_right]) / amount_kind, 1
              )
 
+
 def count_interview_duration(start_date, stop_date) -> int:
     time_difference = stop_date - start_date
     difference_in_seconds = time_difference.total_seconds()
     return int(difference_in_seconds)
+
 
 def convert_seconds_to_hours(seconds: int) -> float:
     hours = seconds / 3600
