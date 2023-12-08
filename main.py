@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import PhotoImage
 from typing import Optional
+from sys import platform
 
 from PIL import Image
 from CTkMessagebox import CTkMessagebox
@@ -54,6 +55,7 @@ class Main(ctk.CTk):
         self.title(title)
         self.geometry(f'{size[0]}x{size[1]}')
         self.resizable(False, False)
+        self.iconbitmap(default='images/icon.ico')
 
         # Instance vars
         self.current_user: str = ''
@@ -1618,7 +1620,7 @@ class InterviewPassTab(ctk.CTkFrame):
                 if self.question_key.isdigit() else None
                 )
             self.insert_question_in_textfield(self.question_key)
-    
+
     def copy_text(event):
         """Allows to copy a text from textboxes."""
         widget = event.widget
@@ -1637,6 +1639,9 @@ class CreateNewUser(ctk.CTkToplevel):
         self.title(title)
         self.geometry('390x160')
         self.resizable(False, False)
+        self.iconbitmap(default='images/icon.ico')
+        if platform.startswith("win"):
+            self.after(200, lambda: self.iconbitmap("images/icon.ico"))
         self.update_combobox = update_combobox
 
         # Vars
@@ -1739,6 +1744,9 @@ class HintWindow(ctk.CTkToplevel):
         self.title(title)
         self.geometry('900x800+440+180')
         self.resizable(False, False)
+        self.iconbitmap('images/icon.ico')
+        if platform.startswith("win"):
+            self.after(200, lambda: self.iconbitmap("images/icon.ico"))
         self.rowconfigure((0, 1), weight=1)
         self.columnconfigure((0, 1), weight=1)
 
