@@ -1,4 +1,3 @@
-
 import datetime
 import json
 from typing import Literal
@@ -9,12 +8,11 @@ from models import engine, User
 from settings import QuestionThreshold as qt
 
 
+# user_name column
 def create_new_user(user_name):
     with engine.connect() as conn:
         conn.execute(insert(User).values(
             user_name=user_name,
-            last_enter_date=datetime.datetime.now(),
-            last_action_date=datetime.datetime.now(),
             interviews_duration=0,
             progress=_get_zero_progress()
             )
@@ -33,34 +31,13 @@ def get_users_list() -> list[tuple[str]]:
         conn.commit()
     return result.all()
 
-
-def get_user_interview_duration(user_name: str) -> int:
+def delete_this_user(user_name: str) -> None:
     with engine.connect() as conn:
-        interview_duration = conn.execute(
-            select(User.interviews_duration
-                   ).where(User.user_name == user_name)
-                   ).first()
+        conn.execute(delete(User).where(User.user_name == user_name))
         conn.commit()
-    return int(interview_duration[0])
 
 
-def get_user_progress(
-        user_name: str) -> dict[Literal['question number'], bool]:
-    progress = json.loads(load_user_progress(user_name))
-    return {
-        int(question_number): is_rigth
-        for question_number, is_rigth in progress.items()
-        }
-
-
-def load_user_progress(user_name: str) -> list[tuple[str]]:
-    with engine.connect() as conn:
-        result = conn.execute(select(User.progress).where(
-            User.user_name == user_name))
-        conn.commit()
-    return result.all()[0][0]
-
-
+# last_enter_date Column
 def get_last_enter_date(user_name: str) -> datetime:
     with engine.connect() as conn:
         result = conn.execute(
@@ -70,6 +47,48 @@ def get_last_enter_date(user_name: str) -> datetime:
     return result[0]
 
 
+def update_last_enter_date(user_name: str, date) -> None:
+    with engine.connect() as conn:
+        conn.execute(
+            update(User).where(
+                User.user_name == user_name).values(last_enter_date=date))
+        conn.commit()
+
+
+
+# interview_duration Column
+def get_user_interview_duration(user_name: str) -> int:
+    with engine.connect() as conn:
+        interview_duration = conn.execute(
+            select(User.interviews_duration
+                   ).where(User.user_name == user_name)
+                   ).first()
+        conn.commit()
+    return int(interview_duration[0])
+
+def update_interview_duration(user_name: str, duration) -> None:
+    with engine.connect() as conn:
+        conn.execute(
+            update(User).where(
+                User.user_name == user_name).values(interviews_duration=duration))
+        conn.commit()
+
+# progress Column
+def get_user_progress(
+        user_name: str) -> dict[Literal['question number'], bool]:
+    progress = json.loads(load_user_progress(user_name))
+    return {
+        int(question_number): is_rigth
+        for question_number, is_rigth in progress.items()
+        }
+
+def load_user_progress(user_name: str) -> list[tuple[str]]:
+    with engine.connect() as conn:
+        result = conn.execute(select(User.progress).where(
+            User.user_name == user_name))
+        conn.commit()
+    return result.all()[0][0]
+
 def update_user_progress(user_name, progress: dict) -> json:
     with engine.connect() as conn:
         conn.execute(
@@ -78,13 +97,7 @@ def update_user_progress(user_name, progress: dict) -> json:
                     progress=json.dumps(progress)))
         conn.commit()
 
-
-def delete_this_user(user_name: str) -> None:
-    with engine.connect() as conn:
-        conn.execute(delete(User).where(User.user_name == user_name))
-        conn.commit()
-
-
+# Support functions
 def _get_zero_progress() -> json:
     return json.dumps(_create_zero_progress())
 

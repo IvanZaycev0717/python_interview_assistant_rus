@@ -1,4 +1,6 @@
+import datetime
 from collections import deque
+import random
 import csv
 import threading
 import tkinter as tk
@@ -30,9 +32,9 @@ from settings import (CREATE_USER_WINDOW, HINT_WINDOW_TITLE,
 from models import create_db
 from manage_db import (create_new_user, get_user_names,
                        get_user_interview_duration,
-                       get_user_progress, get_last_enter_date,
+                       get_user_progress, get_last_enter_date, update_interview_duration, update_last_enter_date,
                        update_user_progress, delete_this_user)
-from user_statistics import (get_right_answers_amount,
+from user_statistics import (convert_seconds_to_hours, count_interview_duration, get_right_answers_amount,
                              get_last_enter_message)
 from validator import (is_name_empty, is_name_too_short,
                        has_name_first_wrong_symbol, has_name_wrong_symbols,
@@ -269,6 +271,16 @@ class UserStatisticsTab(ctk.CTkFrame):
         progress = get_right_answers_amount(
             get_user_progress(self.chosen_user)
             )
+        self.last_enter_message.set(
+            get_last_enter_message(
+                get_last_enter_date(self.chosen_user)
+                )
+                )
+        self.interview_duration_message.set(
+            f'{convert_seconds_to_hours(get_user_interview_duration(self.chosen_user))} ч.'
+            )
+        self.rigth_answer_message.set(progress['right_answers_amount'])
+        self.percentage_completion_message.set(progress['percentage_completion'])
         self.basic_progress_bar.set(progress['basic_progress'])
         self.oop_progress_bar.set(progress['oop_progress'])
         self.pep_progress_bar.set(progress['pep_progress'])
@@ -306,7 +318,7 @@ class UserStatisticsTab(ctk.CTkFrame):
         )
 
         self.interview_duration_message.set(
-            f'{get_user_interview_duration(self.chosen_user)} ч.'
+            f'{convert_seconds_to_hours(get_user_interview_duration(self.chosen_user))} ч.'
             )
 
         messages_data = get_right_answers_amount(
@@ -427,7 +439,7 @@ class UserStatisticsTab(ctk.CTkFrame):
         self.global_stat_label.place(x=30, y=10)
         self.last_enter_label = ctk.CTkLabel(
             self.global_stats_frame,
-            text='Последний вход:',
+            text='Собеседование было:',
             font=('Calibri', 18)
             )
         self.last_enter_label.place(x=30, y=60)
@@ -457,7 +469,7 @@ class UserStatisticsTab(ctk.CTkFrame):
             font=('Calibri', 16),
             background=YELLOW_BACKGROUND
             )
-        self.last_enter_message_label.place(x=180, y=60)
+        self.last_enter_message_label.place(x=215, y=58)
 
         self.interview_duration_message_label = tk.Label(
             master=self.global_stats_frame,
@@ -638,7 +650,7 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.sql_chosen = ctk.IntVar(value=0)
 
         # Flags in sequence mode
-        self.are_random_questions = ctk.IntVar(value=1)
+        self.are_random_questions = ctk.IntVar(value=0)
 
         # Flag in free mode
         self.freemode_var = ctk.IntVar()
@@ -751,6 +763,31 @@ class InterviewSettingsTab(ctk.CTkFrame):
         self.git.place(x=1100, y=15)
 
     def add_chosen_theme(self):
+        # Freemode special behavior
+        if self.freemode_var.get():
+            self.basics_chosen.set(1)
+            self.oop_chosen.set(1)
+            self.pep_chosen.set(1)
+            self.structures_chosen.set(1)
+            self.alghoritms_chosen.set(1)
+            self.git_chosen.set(1)
+            self.sql_chosen.set(1)
+            self.basics.configure(state=tk.DISABLED)
+            self.oop.configure(state=tk.DISABLED)
+            self.pep.configure(state=tk.DISABLED)
+            self.structures.configure(state=tk.DISABLED)
+            self.alghoritms.configure(state=tk.DISABLED)
+            self.git.configure(state=tk.DISABLED)
+            self.sql.configure(state=tk.DISABLED)
+        else:
+            self.basics.configure(state=tk.NORMAL)
+            self.oop.configure(state=tk.NORMAL)
+            self.pep.configure(state=tk.NORMAL)
+            self.structures.configure(state=tk.NORMAL)
+            self.alghoritms.configure(state=tk.NORMAL)
+            self.git.configure(state=tk.NORMAL)
+            self.sql.configure(state=tk.NORMAL)
+
         self.interview_mode = {
             Theme.BASICS: self.basics_chosen.get(),
             Theme.OOP: self.oop_chosen.get(),
@@ -763,6 +800,9 @@ class InterviewSettingsTab(ctk.CTkFrame):
             'Random': self.are_random_questions.get()
         }
         self.set_interview_mode(self.interview_mode)
+
+        
+
 
     def choose_random_interview(self):
         self.choose_random_interview_frame = ctk.CTkFrame(
@@ -916,6 +956,8 @@ class InterviewPassTab(ctk.CTkFrame):
         self.questions_while_interviewing = deque()
         self.pointer = 0
         self.update_progress = update_progress
+        self.start_interview_time = datetime.datetime
+        self.stop_interview_time = datetime.datetime
 
         # Flags
         self.is_interview_in_progress = False
@@ -929,6 +971,7 @@ class InterviewPassTab(ctk.CTkFrame):
             command=lambda: self.focus_get().event_generate("<<Copy>>")
             )
 
+        # Widgets creating
         self.create_interview_frame()
         self.create_control_frame()
         self.create_treeview_frame()
@@ -1158,7 +1201,10 @@ class InterviewPassTab(ctk.CTkFrame):
         self.current_user = self.get_current_user()
         self.interview_mode = self.get_interview_mode()
 
+
         if not self.is_interview_in_progress:
+            self.start_interview_time = self.start_interview_time.today()
+            update_last_enter_date(self.current_user, self.start_interview_time)
             self.begin_button.configure(image=self.begin_button_stop)
             self.button_text.set('Закончить собеседование')
             self.is_interview_in_progress = True
@@ -1170,22 +1216,36 @@ class InterviewPassTab(ctk.CTkFrame):
                     )
                 self.question_tree.configure(selectmode='browse')
             else:
-                self.question_tree.configure(selectmode='none')
+                if self.interview_mode['Freemode']:
+                    self.question_tree.configure(selectmode='browse')
+                else:
+                    self.question_tree.configure(selectmode='none')
                 self.open_chosen_themes()
                 self.set_pointer_at_first_question()
         else:
             self.stop_interview()
 
     def stop_interview(self):
+        self.stop_interview_time = self.stop_interview_time.today()
+        self.update_interview_duration()
         self.is_interview_in_progress = False
         self.set_notebook_status('normal')
         self.begin_button.configure(image=self.begin_button_start)
         self.button_text.set('Начать собеседование')
         self.question_tree.configure(selectmode='none')
         self.question_list.clear()
+        self.questions_while_interviewing.clear()
         self.positive_button.configure(state='disabled')
         self.negative_button.configure(state='disabled')
+        self.update_progress()
+    
+    def update_interview_duration(self):
+        initial_duration = get_user_interview_duration(self.current_user)
+        seconds_left = count_interview_duration(self.start_interview_time, self.stop_interview_time)
+        result_duration = initial_duration + seconds_left
+        update_interview_duration(self.current_user, result_duration)
 
+    
     def open_chosen_themes(self):
         for theme in self.question_tree.get_children():
             self.question_tree.item(theme, open=False)
@@ -1270,21 +1330,28 @@ class InterviewPassTab(ctk.CTkFrame):
             for question_number
             in self.question_list if question_number not in user_right_answer
             ]
+        if self.interview_mode['Random']:
+            random.shuffle(self.question_list)
 
     # CORRECT OR WRONG ANSWER SECTION
     def answer_correctly(self):
         try:
-            self.turn_to_green()
-            index = self.questions_while_interviewing.popleft()
-            self.question_tree.selection_set(
-                (str(self.questions_while_interviewing[0]), )
-                )
-            self.question_tree.see(
-                (str(self.questions_while_interviewing[0]), )
-                )
-            self.user_progress[index] = True
-            update_user_progress(self.current_user, self.user_progress)
-            self.update_progress()
+            if not self.interview_mode['Freemode']:
+                self.turn_to_green()
+                index = self.questions_while_interviewing.popleft()
+                self.question_tree.selection_set(
+                    (str(self.questions_while_interviewing[0]), )
+                    )
+                self.question_tree.see(
+                    (str(self.questions_while_interviewing[0]), )
+                    )
+                self.speak_theory_question()
+                self.user_progress[index] = True
+                update_user_progress(self.current_user, self.user_progress)
+            else:
+                self.turn_to_green()
+                self.user_progress[self.question_key + 8] = True
+                update_user_progress(self.current_user, self.user_progress)
         except IndexError:
             self.stop_interview()
             CTkMessagebox(
@@ -1295,12 +1362,16 @@ class InterviewPassTab(ctk.CTkFrame):
                 )
 
     def answer_wrong(self):
-        self.turn_to_red()
-        self.questions_while_interviewing.rotate(-1)
-        self.question_tree.selection_set(
-            (str(self.questions_while_interviewing[0]), )
-            )
-        self.question_tree.see((str(self.questions_while_interviewing[0]), ))
+        if not self.interview_mode['Freemode']:
+            self.turn_to_red()
+            self.questions_while_interviewing.rotate(-1)
+            self.question_tree.selection_set(
+                (str(self.questions_while_interviewing[0]), )
+                )
+            self.question_tree.see((str(self.questions_while_interviewing[0]), ))
+            self.speak_theory_question()
+        else:
+            self.turn_to_red()
 
     def set_pointer_at_first_question(self):
         for question_number in self.question_list:
@@ -1312,6 +1383,7 @@ class InterviewPassTab(ctk.CTkFrame):
             self.question_tree.see(
                 (str(self.questions_while_interviewing[0]), )
                 )
+            self.speak_theory_question()
         except IndexError:
             pass
 
@@ -1371,18 +1443,24 @@ class InterviewPassTab(ctk.CTkFrame):
             self.set_volume(0.5)
 
     def prepare_livecoding(self):
-        if self.get_volume() and isinstance(self.question_key, int):
-            engine = pyttsx3.init()
-            engine.setProperty('volume', self.get_volume())
-            engine.say(self.question_bank[self.question_key][4])
-            engine.runAndWait()
+        try:
+            if self.get_volume():
+                engine = pyttsx3.init()
+                engine.setProperty('volume', self.get_volume())
+                engine.say(self.question_bank[self.questions_while_interviewing[0] - 8][4])
+                engine.runAndWait()
+        except:
+            pass
 
     def prepare_theory_question(self):
-        if self.get_volume() and isinstance(self.question_key, int):
-            engine = pyttsx3.init()
-            engine.setProperty('volume', self.get_volume())
-            engine.say(self.question_bank[self.question_key][3])
-            engine.runAndWait()
+        try:
+            if self.get_volume():
+                engine = pyttsx3.init()
+                engine.setProperty('volume', self.get_volume())
+                engine.say(self.question_bank[self.questions_while_interviewing[0] - 8][3])
+                engine.runAndWait()
+        except:
+            pass
 
     def speak_theory_question(self):
         threading.Thread(target=self.prepare_theory_question).start()

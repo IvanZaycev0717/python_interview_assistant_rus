@@ -21,8 +21,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_name: Mapped[str] = mapped_column(String(25))
-    last_enter_date: Mapped[Type] = mapped_column(DateTime)
-    last_action_date: Mapped[Type] = mapped_column(DateTime)
+    last_enter_date: Mapped[Type] = mapped_column(DateTime, nullable=True)
     interviews_duration: Mapped[int] = mapped_column(Integer)
     progress: Mapped[Type] = mapped_column(JSON)
 
