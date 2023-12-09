@@ -18,18 +18,18 @@
 6. Git (64 вопроса)
 7. Базы данных и SQL запросы (58 вопросов)
 
+## :city_sunrise: Демонстрация работы приложения
+
+ Сайт        | Ссылка           |Описание|
+| ------------- |:-------------:|:--------:|
+|![AID](https://github.com/IvanZaycev0717/the_mystery_of_the_mansion/assets/111955306/138cf8d1-a6f8-4835-9e54-93a48df815d3)|[Ссылка](https://disk.yandex.ru/d/7XfNyXARzVPIfQ)|Демонстрация работы приложения|
+|![habr](https://github.com/IvanZaycev0717/the_mystery_of_the_mansion/assets/111955306/772e1cac-b1e7-49c3-b87f-5f8fb2bdfbc8)|[Ссылка](https://disk.yandex.ru/d/7XfNyXARzVPIfQ)|Статья о создании приложения|
+
 ## :floppy_disk: EXE-версия приложения для Windows
 Скачать exe-версию можно по следующей ссылке:
  Сайт        | Ссылка           | 
 | ------------- |:-------------:|
 | ![yandex](https://github.com/IvanZaycev0717/python_interview_assistant_rus/assets/111955306/d7467ff8-fd2b-4c40-87fd-5bbf056571ee)| [Download](https://disk.yandex.ru/d/7XfNyXARzVPIfQ)|
-
-## :chart_with_upwards_trend: Production
-
- Сайт        | Ссылка           |Описание|
-| ------------- |:-------------:|:--------:|
-|![AID](https://github.com/IvanZaycev0717/the_mystery_of_the_mansion/assets/111955306/138cf8d1-a6f8-4835-9e54-93a48df815d3)|[Ссылка](https://disk.yandex.ru/d/7XfNyXARzVPIfQ)|Демонстрация работы программы|
-|![habr](https://github.com/IvanZaycev0717/the_mystery_of_the_mansion/assets/111955306/772e1cac-b1e7-49c3-b87f-5f8fb2bdfbc8)|[Ссылка](https://disk.yandex.ru/d/7XfNyXARzVPIfQ)|Статья о создании приложения|
 
 ## :fax: Гибкая настройка приложения
 Алгоритмы приложения позволяют пользователю гибко настраивать процесс собеседования под себя. Среди основных возможностей:
