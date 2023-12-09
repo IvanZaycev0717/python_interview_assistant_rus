@@ -12,6 +12,8 @@ WRONG_SYMBOLS = (
     '|', '$', '^', '*', '(', ')', '+', '-', '='
     )
 
+# Database name
+DATABASE_NAME = 'users.db'
 
 class ValidResponse(str, Enum):
     SUCCESS = '*Пользователь успешно создан'

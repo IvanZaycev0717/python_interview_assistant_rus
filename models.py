@@ -8,7 +8,9 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-engine = create_engine('sqlite:///users.db', echo=False)
+from settings import DATABASE_NAME
+
+engine = create_engine(f'sqlite:///{DATABASE_NAME}', echo=False)
 metadata = MetaData()
 
 
@@ -17,6 +19,16 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
+    """A class representing user's data in the app.
+
+    Attributes:
+        __tablename__ (str): The name of the table in the database.
+        id: The unique identifier of the user.
+        user_name: The name of the user.
+        last_enter_date: The date and time of the user's last login.
+        interviews_duration: The total duration of interviews for the user.
+        progress: The user's progress data stored in JSON format.
+    """
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -27,9 +39,11 @@ class User(Base):
 
 
 def create_db() -> None:
-    if not _is_db_crated():
+    """Creates database as a SQLite-file"""
+    if not _is_db_created():
         Base.metadata.create_all(engine)
 
 
-def _is_db_crated() -> bool:
-    return os.path.exists('./users.db')
+def _is_db_created() -> bool:
+    """Checks DB existence in the root folder."""
+    return os.path.exists(f'./{DATABASE_NAME}')
