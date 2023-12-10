@@ -32,7 +32,7 @@
 Скачать exe-версию можно по следующей ссылке:
  Сайт        | Ссылка           | 
 | ------------- |:-------------:|
-| ![yandex](https://github.com/IvanZaycev0717/python_interview_assistant_rus/assets/111955306/df5ff781-7cdd-4be5-9359-113b3706324e)| [Download](https://disk.yandex.ru/d/7XfNyXARzVPIfQ)|
+| ![yandex](https://github.com/IvanZaycev0717/python_interview_assistant_rus/assets/111955306/df5ff781-7cdd-4be5-9359-113b3706324e)| [Download](https://disk.yandex.ru/d/i-yzrNq1C9lMyQ)|
 
 ## :fax: Гибкая настройка приложения
 Алгоритмы приложения позволяют пользователю гибко настраивать процесс собеседования под себя. Среди основных возможностей:
