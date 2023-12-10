@@ -1,4 +1,7 @@
 # :bar_chart: Python Interview Assistant
+
+![demo](https://github.com/IvanZaycev0717/python_interview_assistant_rus/assets/111955306/1404cff4-b19e-4ef4-af14-eafc8959fecb)
+
 **Python Interview Assistant** - многопоточное desktop-приложение на Python, которое позволяет подготовиться к собеседованиям по Python.
 
 ## :pager: Технологии
