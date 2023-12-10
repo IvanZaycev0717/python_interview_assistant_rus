@@ -26,7 +26,7 @@
  Сайт        | Ссылка           |Описание|
 | ------------- |:-------------:|:--------:|
 |![AID](https://github.com/IvanZaycev0717/the_mystery_of_the_mansion/assets/111955306/138cf8d1-a6f8-4835-9e54-93a48df815d3)|[Ссылка](https://youtu.be/eud7mDUjJ3E)|Демонстрация работы приложения|
-|![habr](https://github.com/IvanZaycev0717/the_mystery_of_the_mansion/assets/111955306/772e1cac-b1e7-49c3-b87f-5f8fb2bdfbc8)|[Ссылка](https://youtu.be/eud7mDUjJ3E)|Статья о создании приложения|
+|![habr](https://github.com/IvanZaycev0717/the_mystery_of_the_mansion/assets/111955306/772e1cac-b1e7-49c3-b87f-5f8fb2bdfbc8)|[Ссылка](https://habr.com/ru/articles/779624/)|Статья о создании приложения|
 
 ## :floppy_disk: EXE-версия приложения для Windows
 Скачать exe-версию можно по следующей ссылке:
