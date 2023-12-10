@@ -26,7 +26,8 @@ class User(Base):
         id: The unique identifier of the user.
         user_name: The name of the user.
         last_enter_date: The date and time of the user's last login.
-        interviews_duration: The total duration of interviews for the user.
+        interviews_duration: The total duration of interviews
+        for the user in seconds.
         progress: The user's progress data stored in JSON format.
     """
     __tablename__ = 'users'
