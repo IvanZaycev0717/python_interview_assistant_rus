@@ -1878,5 +1878,6 @@ class PDFMiner:
 
 if __name__ == '__main__':
     create_db()
+    ctk.set_appearance_mode("Light")
     main_window = Main(APP_NAME, APP_RESOLUTION)
     main_window.mainloop()
