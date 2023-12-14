@@ -1,19 +1,21 @@
 import datetime
 from collections import deque
 import random
+import platform
 import csv
 import threading
 import tkinter as tk
 from tkinter import ttk
 from tkinter import PhotoImage
 from typing import Optional
-from sys import platform
+import sys
 
 from PIL import Image
 from CTkMessagebox import CTkMessagebox
 import customtkinter as ctk
 import fitz
-import pyttsx3
+if platform.system() == 'Windows':
+    import pyttsx3
 
 from colors import (YELLOW_BACKGROUND, PINK_BACKGROUND,
                     GREEN_BACKGROUND, SWAMP_FOREGROUND,
@@ -55,7 +57,8 @@ class Main(ctk.CTk):
         self.title(title)
         self.geometry(f'{size[0]}x{size[1]}')
         self.resizable(False, False)
-        self.iconbitmap(default='images/icon.ico')
+        if platform.system() == 'Windows':
+            self.iconbitmap(default='images/icon.ico')
 
         # Instance vars
         self.current_user: str = ''
@@ -314,8 +317,8 @@ class UserStatisticsTab(ctk.CTkFrame):
                 )
                 )
         self.interview_duration_message.set(
-            f'{convert_seconds_to_hours(
-                get_user_interview_duration(self.chosen_user))} ч.'
+            str(convert_seconds_to_hours(
+                get_user_interview_duration(self.chosen_user))) + ' ч.'
             )
         self.rigth_answer_message.set(progress['right_answers_amount'])
         self.percentage_completion_message.set(
@@ -364,8 +367,8 @@ class UserStatisticsTab(ctk.CTkFrame):
         )
 
         self.interview_duration_message.set(
-            f'{convert_seconds_to_hours(
-                get_user_interview_duration(self.chosen_user))} ч.'
+            str(convert_seconds_to_hours(
+                get_user_interview_duration(self.chosen_user))) + ' ч.'
             )
 
         messages_data = get_right_answers_amount(
@@ -1573,11 +1576,13 @@ class InterviewPassTab(ctk.CTkFrame):
 
     def speak_theory_question(self):
         """Plays theory question."""
-        threading.Thread(target=self.prepare_theory_question).start()
+        if platform.system() == 'Windows':
+            threading.Thread(target=self.prepare_theory_question).start()
 
     def speak_livecoding(self):
         """Plays livecoding question."""
-        threading.Thread(target=self.prepare_livecoding).start()
+        if platform.system() == 'Windows':
+            threading.Thread(target=self.prepare_livecoding).start()
 
     # EVENTS SECTION
     def context_menu_event_loop(self, text_box):
@@ -1639,8 +1644,8 @@ class CreateNewUser(ctk.CTkToplevel):
         self.title(title)
         self.geometry('390x160')
         self.resizable(False, False)
-        self.iconbitmap(default='images/icon.ico')
-        if platform.startswith("win"):
+        if platform.system() == 'Windows' and sys.platform.startswith("win"):
+            self.iconbitmap(default='images/icon.ico')
             self.after(200, lambda: self.iconbitmap("images/icon.ico"))
         self.update_combobox = update_combobox
 
@@ -1744,8 +1749,8 @@ class HintWindow(ctk.CTkToplevel):
         self.title(title)
         self.geometry('900x800+440+180')
         self.resizable(False, False)
-        self.iconbitmap('images/icon.ico')
-        if platform.startswith("win"):
+        if platform.system() == 'Windows' and sys.platform.startswith("win"):
+            self.iconbitmap('images/icon.ico')
             self.after(200, lambda: self.iconbitmap("images/icon.ico"))
         self.rowconfigure((0, 1), weight=1)
         self.columnconfigure((0, 1), weight=1)

@@ -11,10 +11,11 @@ pyinstaller==6.2.0
 pyinstaller-hooks-contrib==2023.10
 PyMuPDF==1.23.6
 PyMuPDFb==1.23.6
-pypiwin32==223
-pyttsx3==2.90
-pywin32==306
+pypiwin32==223; sys_platform == 'win32'
+pyttsx3==2.90; sys_platform == 'win32'
+pywin32==306; sys_platform == 'win32'
 pywin32-ctypes==0.2.2
 setuptools==69.0.2
 SQLAlchemy==2.0.23
 typing_extensions==4.8.0
+
